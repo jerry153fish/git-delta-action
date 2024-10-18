@@ -1,0 +1,42 @@
+name: 'Git Delta'
+description: 'Show git diff with delta for a specific files against environments/branches/commits'
+inputs:
+  environment:
+    description: 'Environment to compare against'
+    required: false
+  branch:
+    description: 'Branch to compare against'
+    required: false
+    default: 'main'
+  commit:
+    description: 'Commit to compare against'
+    required: false
+  files:
+    description: 'Files to show the delta for'
+    required: false
+    default: ""
+  files_separator:
+    description: "Separator used to split the files and file ignore patterns"
+    default: "\n"
+    required: false
+  files_ignore:
+    description: "Ignore patterns for the delta"
+    required: false
+    default: ""
+  delta_output_path_depth:
+    description: |
+      Use `0` for the full path.
+      Use a positive number (`> 0`) for breadth-first level:
+      For example, `1` will return `/root/level1` from `/root/level1/level2/changed.txt`.
+      Use a negative number (`< 0`) for depth-first level:
+      For example, `-1` will return `/root/level1/level2` from `/root/level1/level2/changed.txt`.
+    required: false
+    default: 0
+outputs:
+  delta_files:
+    description: 'File paths with the delta'
+  is_detected:
+    description: 'Bool to show if delta has been detected'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
