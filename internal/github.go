@@ -63,6 +63,24 @@ func GetLatestSuccessfulDeploymentSha(client *github.Client, cfg *InputConfig) s
 	return ""
 }
 
+// GetLatestSHA retrieves the latest commit SHA for a specified branch in a repository.
+func GetBranchLatestSHA(client *github.Client, cfg *InputConfig) string {
+	// Create a background context for the GitHub API calls
+	ctx := context.Background()
+	// Extract the owner and repository names from the full repository path
+	owner, repo := extractOwnerRepo(cfg.Repo)
+
+	// Get the reference for the specified branch
+	ref, _, err := client.Git.GetRef(ctx, owner, repo, "refs/heads/"+cfg.Branch)
+	if err != nil {
+		log.Printf("Error retrieving SHA for branch '%s' in repository '%s': %v", cfg.Branch, cfg.Repo, err)
+		return ""
+	}
+	log.Printf("Latest successful Sha for Brach %s, SHA %s", cfg.Branch, ref.Object.GetSHA())
+	// Return the SHA of the latest commit
+	return ref.Object.GetSHA()
+}
+
 // extractOwnerRepo takes a repository string in the format "owner/repo"
 // and splits it into the owner and repository name.
 func extractOwnerRepo(repo string) (string, string) {

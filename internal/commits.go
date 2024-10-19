@@ -27,6 +27,7 @@ type InputConfig struct {
 	EventName            string `env:"GITHUB_EVENT_NAME"`
 	Job                  string `env:"GITHUB_JOB"`
 	Repo                 string `env:"GITHUB_REPOSITORY"`
+	Branch               string `env:"INPUT_BRANCH"`
 	FilePatterns         []string
 	IgnoreFilePatterns   []string
 }

@@ -14,6 +14,7 @@ func TestGetInputConfig(t *testing.T) {
 	os.Setenv("INPUT_IGNORE_FILES", "ignore1.txt\nignore2.txt")
 	os.Setenv("INPUT_DELTA_OUTPUT_PATH_DEPTH", "2")
 	os.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
+	os.Setenv("INPUT_BRANCH", "main")
 
 	os.Setenv("GITHUB_SHA", "def456")
 	os.Setenv("GITHUB_REF", "refs/heads/main")
@@ -43,6 +44,7 @@ func TestGetInputConfig(t *testing.T) {
 		EventName:            "push",
 		Job:                  "build",
 		Repo:                 "test/test",
+		Branch:               "main",
 	}
 
 	if !reflect.DeepEqual(ic, expectedIC) {
@@ -61,6 +63,7 @@ func TestMain(m *testing.M) {
 	os.Unsetenv("INPUT_IGNORE_FILES")
 	os.Unsetenv("INPUT_DELTA_OUTPUT_PATH_DEPTH")
 	os.Unsetenv("INPUT_GITHUB_TOKEN")
+	os.Unsetenv("INPUT_BRANCH")
 	os.Unsetenv("GITHUB_SHA")
 	os.Unsetenv("GITHUB_REF")
 	os.Unsetenv("GITHUB_API_URL")

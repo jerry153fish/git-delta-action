@@ -24,4 +24,5 @@ func main() {
 	log.Println("GitHub client created with authentication")
 
 	internal.GetLatestSuccessfulDeploymentSha(client, &c)
+	internal.GetBranchLatestSHA(client, &c)
 }

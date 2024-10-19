@@ -52,7 +52,7 @@ func setup(t *testing.T) (client *github.Client, mux *http.ServeMux, serverURL s
 	return client, mux, server.URL
 }
 
-func TestGetLatestSuccessfulDeployment(t *testing.T) {
+func TestGetLatestSuccessfulDeploymentSha(t *testing.T) {
 	client, mux, _ := setup(t)
 
 	// Mock the ListDeployments endpoint
@@ -83,3 +83,30 @@ func TestGetLatestSuccessfulDeployment(t *testing.T) {
 		t.Errorf("Expected deployment SHA abc123, got %s", sha)
 	}
 }
+
+// func TestGetBranchLatestSHA(t *testing.T) {
+// 	client, mux, _ := setup(t)
+
+// 	// Mock the ListDeployments endpoint
+// 	mux.HandleFunc("/repos/owner/repo/git/ref/refs/heads/main", func(w http.ResponseWriter, r *http.Request) {
+// 		fmt.Fprint(w, `{"Object":{"SHA": "abc123"}}`)
+// 	})
+
+// 	// Create a test InputConfig
+// 	testConfig := &InputConfig{
+// 		Branch:      "main",
+// 		GithubToken: "test-token",
+// 		Repo:        "owner/repo",
+// 	}
+
+// 	// Call the function under test
+// 	sha := GetBranchLatestSHA(client, testConfig)
+
+// 	// Assert the results
+// 	if sha == "" {
+// 		t.Fatal("Expected a deployment, got nil")
+// 	}
+// 	if sha != "abc123" {
+// 		t.Errorf("Expected deployment SHA abc123, got %s", sha)
+// 	}
+// }
