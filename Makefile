@@ -60,5 +60,8 @@ vet: install ## run vet
 act-test: ## Run test in act
 	@act --secret-file .secrets -j test
 
+act-sanity: ## Run test in act
+	@act --secret-file .secrets -j sanity-check
+
 act-docker: ## Run docker build and push in act
 	@act --secret-file .secrets -j docker-push
