@@ -2,9 +2,13 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/google/go-github/v66/github"
 )
 
@@ -79,6 +83,51 @@ func GetBranchLatestSHA(client *github.Client, cfg *InputConfig) string {
 	log.Printf("Latest successful Sha for Brach %s, SHA %s", cfg.Branch, ref.Object.GetSHA())
 	// Return the SHA of the latest commit
 	return ref.Object.GetSHA()
+}
+
+func GetDiffBetweenCommits(repoPath, sha1, sha2 string) ([]string, error) {
+	// Open the repository at the given path
+	repo, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not open repository: %v", err)
+	}
+
+	// Get the commits corresponding to the given SHAs
+	commit1, err := repo.CommitObject(plumbing.NewHash(sha1))
+	if err != nil {
+		return nil, fmt.Errorf("could not find commit for SHA %s: %v", sha1, err)
+	}
+
+	commit2, err := repo.CommitObject(plumbing.NewHash(sha2))
+	if err != nil {
+		return nil, fmt.Errorf("could not find commit for SHA %s: %v", sha2, err)
+	}
+
+	// Get the tree objects for both commits
+	tree1, err := commit1.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("could not get tree for commit %s: %v", sha1, err)
+	}
+
+	tree2, err := commit2.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("could not get tree for commit %s: %v", sha2, err)
+	}
+
+	// Get the diff between the two trees
+	changes, err := object.DiffTree(tree1, tree2)
+	if err != nil {
+		return nil, fmt.Errorf("could not get diff between trees: %v", err)
+	}
+
+	// Collect the filenames of changed files
+	var diffFiles []string
+	for _, change := range changes {
+		// Append the file name (NewName) to the list of diff files
+		diffFiles = append(diffFiles, change.To.Name)
+	}
+
+	return diffFiles, nil
 }
 
 // extractOwnerRepo takes a repository string in the format "owner/repo"

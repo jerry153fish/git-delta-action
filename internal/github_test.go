@@ -52,6 +52,15 @@ func setup(t *testing.T) (client *github.Client, mux *http.ServeMux, serverURL s
 	return client, mux, server.URL
 }
 
+func contains(slice []string, item string) bool {
+	for _, v := range slice {
+		if v == item {
+			return true
+		}
+	}
+	return false
+}
+
 func TestGetLatestSuccessfulDeploymentSha(t *testing.T) {
 	client, mux, _ := setup(t)
 
@@ -84,29 +93,58 @@ func TestGetLatestSuccessfulDeploymentSha(t *testing.T) {
 	}
 }
 
-// func TestGetBranchLatestSHA(t *testing.T) {
-// 	client, mux, _ := setup(t)
+func TestGetBranchLatestSHA(t *testing.T) {
+	client, mux, _ := setup(t)
 
-// 	// Mock the ListDeployments endpoint
-// 	mux.HandleFunc("/repos/owner/repo/git/ref/refs/heads/main", func(w http.ResponseWriter, r *http.Request) {
-// 		fmt.Fprint(w, `{"Object":{"SHA": "abc123"}}`)
-// 	})
+	// Mock the ListDeployments endpoint
+	mux.HandleFunc("/repos/owner/repo/git/ref/heads/main", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `
+		{
+			"ref": "refs/heads/b",
+			"url": "https://api.github.com/repos/o/r/git/refs/heads/b",
+			"object": {
+				"type": "commit",
+				"sha": "abc123",
+				"url": "https://api.github.com/repos/o/r/git/commits/aa218f56b14c9653891f9e74264a383fa43fefbd"
+			}
+		}`)
+	})
 
-// 	// Create a test InputConfig
-// 	testConfig := &InputConfig{
-// 		Branch:      "main",
-// 		GithubToken: "test-token",
-// 		Repo:        "owner/repo",
-// 	}
+	// Create a test InputConfig
+	testConfig := &InputConfig{
+		Branch:      "main",
+		GithubToken: "test-token",
+		Repo:        "owner/repo",
+	}
 
-// 	// Call the function under test
-// 	sha := GetBranchLatestSHA(client, testConfig)
+	// Call the function under test
+	sha := GetBranchLatestSHA(client, testConfig)
 
-// 	// Assert the results
-// 	if sha == "" {
-// 		t.Fatal("Expected a deployment, got nil")
-// 	}
-// 	if sha != "abc123" {
-// 		t.Errorf("Expected deployment SHA abc123, got %s", sha)
-// 	}
-// }
+	// Assert the results
+	if sha == "" {
+		t.Fatal("Expected a deployment, got nil")
+	}
+	if sha != "abc123" {
+		t.Errorf("Expected deployment SHA abc123, got %s", sha)
+	}
+}
+
+// c6023e778dac2c67e7ec0c42889e349a76414294 839bc7c55038951cfd3fed884617fd80d02ddbd5
+
+func TestGetDiffBetweenCommits(t *testing.T) {
+	sha1 := "c6023e778dac2c67e7ec0c42889e349a76414294"
+	sha2 := "839bc7c55038951cfd3fed884617fd80d02ddbd5"
+
+	result, err := GetDiffBetweenCommits("../", sha1, sha2)
+	if err != nil {
+		t.Fatalf("Error getting diff between commits: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Expected non-nil result, got nil")
+	}
+
+	if !contains(result, "Dockerfile") {
+		t.Errorf("Expected Dockerfile to be inside result %v", result)
+	}
+}
