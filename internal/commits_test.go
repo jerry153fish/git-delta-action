@@ -82,7 +82,7 @@ func TestFilterStrings(t *testing.T) {
 	}{
 		{
 			input:           []string{"file1.txt", "file2.txt", "file3.log"},
-			includePatterns: []string{".*\\.txt$"},
+			includePatterns: []string{".*.txt$"},
 			excludePatterns: []string{"file2.txt"},
 			expectedResult:  []string{"file1.txt"},
 			expectedErrors:  []string{},
@@ -118,21 +118,21 @@ func TestFilterStrings(t *testing.T) {
 		{
 			input:           []string{"aa/bb/data.csv", "data.json", "aa/cc/data.csv", "aa/data.json"},
 			includePatterns: []string{"aa/*"},
-			excludePatterns: []string{},
+			excludePatterns: []string{"*.zip"},
 			expectedResult:  []string{"aa/bb/data.csv", "aa/cc/data.csv", "aa/data.json"},
 			expectedErrors:  []string{},
 		},
 		{
 			input:           []string{"aa/bb/data.csv", "data.json", "aa/cc/data.csv", "aa/data.json"},
 			includePatterns: []string{".*"},
-			excludePatterns: []string{"aa/*"},
+			excludePatterns: []string{"aa/*", "*.zip"},
 			expectedResult:  []string{"data.json"},
 			expectedErrors:  []string{},
 		},
 	}
 
 	for _, test := range tests {
-		result, errors := FilterStrings(test.input, test.includePatterns, test.excludePatterns)
+		result := FilterStrings(test.input, test.includePatterns, test.excludePatterns)
 
 		if len(result) != len(test.expectedResult) {
 			t.Errorf("expected %v, got %v", test.expectedResult, result)
@@ -144,9 +144,6 @@ func TestFilterStrings(t *testing.T) {
 			}
 		}
 
-		if len(errors) != len(test.expectedErrors) {
-			t.Errorf("expected errors %v, got %v", test.expectedErrors, errors)
-		}
 	}
 }
 

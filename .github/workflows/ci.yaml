@@ -41,16 +41,23 @@ jobs:
         run: |
           sed -i 's/docker:\/\/jerry153fish\/git-delta:latest/Dockerfile/g' action.yaml
 
-      - name: Get Delta against master
+      - name: Get Delta against main environment
         uses: ./
+        id: delta-env
         with:
           environment: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            live/prod/*
-            live/stag/*
+            internal/*
+            .github/*
           ignore_files: |
             *.zip
+            internal/.*test.go
+
+      - name: Print Delta Output
+        run: |
+          echo "Delta flag: ${{ steps.delta-env.outputs.is_detected }}"
+          echo "Delta flag: ${{ steps.delta-env.outputs.delta_files }}"
 
       - name: Restore action.yaml
         if: always()

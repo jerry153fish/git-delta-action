@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"strings"
+
+	"encoding/json"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-git/go-git/v5"
@@ -128,37 +131,42 @@ func GetDiffBetweenCommits(repoPath, sha1, sha2 string) ([]string, error) {
 }
 
 // filterStrings filters the input strings based on inclusion and exclusion regex patterns.
-func FilterStrings(input []string, includePatterns, excludePatterns []string) ([]string, []string) {
+func FilterStrings(input []string, includePatterns, excludePatterns []string) []string {
 	var result []string
-	var errors []string
 
 	// Compile inclusion regex patterns
 	var includeRegexes []*regexp.Regexp
 	for _, pattern := range includePatterns {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("failed to compile include pattern %q: %v", pattern, err))
-			continue
+		if pattern != "" {
+			valid, err := isValidRegex(pattern)
+			if valid {
+				re, _ := regexp.Compile(pattern)
+				includeRegexes = append(includeRegexes, re)
+			} else {
+				fmt.Printf("The included pattern '%s' is an illegal regex: %v\n", pattern, err)
+			}
 		}
-		includeRegexes = append(includeRegexes, re)
 	}
 
 	// Compile exclusion regex patterns
 	var excludeRegexes []*regexp.Regexp
 	for _, pattern := range excludePatterns {
-		re, err := regexp.Compile(pattern)
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("failed to compile exclude pattern %q: %v", pattern, err))
-			break
+		if pattern != "" {
+			valid, err := isValidRegex(pattern)
+			if valid {
+				re, _ := regexp.Compile(pattern)
+				excludeRegexes = append(excludeRegexes, re)
+			} else {
+				fmt.Printf("The excluded pattern '%s' is an illegal regex: %v\n", pattern, err)
+			}
 		}
-		excludeRegexes = append(excludeRegexes, re)
 	}
 
 	// Filter the input strings
 	for _, str := range input {
 		included := false
 		for _, re := range includeRegexes {
-			if re.MatchString(str) {
+			if re != nil && re.MatchString(str) {
 				included = true
 				break
 			}
@@ -179,5 +187,71 @@ func FilterStrings(input []string, includePatterns, excludePatterns []string) ([
 		}
 	}
 
-	return result, errors
+	return result
+}
+
+// isValidRegex checks if the provided string is a valid regular expression.
+func isValidRegex(pattern string) (bool, error) {
+	_, err := regexp.Compile(pattern)
+	if err != nil {
+		return false, err // Return false and the error
+	}
+	return true, nil // Return true if no error
+}
+
+// SetGitHubOutput sets a GitHub Actions output variable.
+func SetGitHubOutput(name, value string) error {
+	// Get the GITHUB_OUTPUT environment variable
+	outputFile := os.Getenv("GITHUB_OUTPUT")
+	if outputFile == "" {
+		return fmt.Errorf("GITHUB_OUTPUT is not set")
+	}
+
+	// Write the output to the environment file
+	f, err := os.OpenFile(outputFile, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open output file: %v", err)
+	}
+	defer f.Close()
+
+	// Format the output and write it to the file
+	if _, err := f.WriteString(fmt.Sprintf("%s=%s\n", name, value)); err != nil {
+		return fmt.Errorf("failed to write output: %v", err)
+	}
+
+	return nil
+}
+
+func Delta() {
+	cfg := GetInputConfig()
+	client := GetClient(&cfg)
+
+	var baseSha string
+	if cfg.Environment != "" {
+		baseSha = GetLatestSuccessfulDeploymentSha(client, &cfg)
+	} else {
+		baseSha = GetBranchLatestSHA(client, &cfg)
+	}
+
+	diffs, err := GetDiffBetweenCommits(".", baseSha, cfg.Sha)
+	if err != nil {
+		log.Fatalf("Error getting diff between commits: %v", err)
+	}
+
+	log.Println(diffs)
+
+	deltas := FilterStrings(diffs, cfg.FilePatterns, cfg.IgnoreFilePatterns)
+
+	log.Println(deltas)
+
+	if len(deltas) > 0 {
+		SetGitHubOutput("is_detected", "true")
+		jsonData, err := json.Marshal(deltas)
+		if err != nil {
+			log.Println("Error marshalling to JSON: %v", err)
+		}
+		SetGitHubOutput("delta_files", string(jsonData))
+	} else {
+		SetGitHubOutput("is_detected", "false")
+	}
 }
