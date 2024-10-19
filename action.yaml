@@ -43,7 +43,7 @@ inputs:
     default: 0
 outputs:
   delta_files:
-    description: 'File paths with the delta'
+    description: 'File paths with the delta as json string format'
   is_detected:
     description: 'Bool to show if delta has been detected'
 runs:
