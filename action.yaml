@@ -39,4 +39,4 @@ outputs:
     description: 'Bool to show if delta has been detected'
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'docker://jerry153fish/git-delta:latest'
