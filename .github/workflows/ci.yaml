@@ -44,7 +44,7 @@ jobs:
       - name: Get Delta against master
         uses: ./
         with:
-          environment: stag
+          environment: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             live/prod/*
@@ -97,7 +97,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-buildx-
             ${{ runner.os }}-

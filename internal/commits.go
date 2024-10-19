@@ -12,7 +12,7 @@ const (
 	FileSeparator = "\n"
 )
 
-// DeltaConfig holds the configuration for the delta processing
+// InputConfig holds the configuration for the Action Inputs
 type InputConfig struct {
 	Environment          string `env:"INPUT_ENVIRONMENT"`
 	Commit               string `env:"INPUT_COMMIT"`
@@ -26,6 +26,7 @@ type InputConfig struct {
 	Workflow             string `env:"GITHUB_WORKFLOW"`
 	EventName            string `env:"GITHUB_EVENT_NAME"`
 	Job                  string `env:"GITHUB_JOB"`
+	Repo                 string `env:"GITHUB_REPOSITORY"`
 	FilePatterns         []string
 	IgnoreFilePatterns   []string
 }
