@@ -1,10 +1,17 @@
 package internal
 
 import (
+	"context"
+	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/google/go-github/v66/github"
 )
 
 const (
@@ -52,4 +59,125 @@ func GetInputConfig() InputConfig {
 	}
 
 	return c
+}
+
+// GetLatestSHA retrieves the latest commit SHA for a specified branch in a repository.
+func GetBranchLatestSHA(client *github.Client, cfg *InputConfig) string {
+	// Create a background context for the GitHub API calls
+	ctx := context.Background()
+	// Extract the owner and repository names from the full repository path
+	owner, repo := extractOwnerRepo(cfg.Repo)
+
+	// Get the reference for the specified branch
+	ref, _, err := client.Git.GetRef(ctx, owner, repo, "refs/heads/"+cfg.Branch)
+	if err != nil {
+		log.Printf("Error retrieving SHA for branch '%s' in repository '%s': %v", cfg.Branch, cfg.Repo, err)
+		return ""
+	}
+	log.Printf("Latest successful Sha for Brach %s, SHA %s", cfg.Branch, ref.Object.GetSHA())
+	// Return the SHA of the latest commit
+	return ref.Object.GetSHA()
+}
+
+// GetDiffBetweenCommits retrieves the list of files that have changed between two commits identified by their SHAs.
+// It takes the repository path and the two commit SHAs as input parameters.
+// Returns a slice of strings containing the names of the changed files and an error if any occurs.
+func GetDiffBetweenCommits(repoPath, sha1, sha2 string) ([]string, error) {
+	// Open the repository at the given path
+	repo, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not open repository: %v", err)
+	}
+
+	// Get the commits corresponding to the given SHAs
+	commit1, err := repo.CommitObject(plumbing.NewHash(sha1))
+	if err != nil {
+		return nil, fmt.Errorf("could not find commit for SHA %s: %v", sha1, err)
+	}
+
+	commit2, err := repo.CommitObject(plumbing.NewHash(sha2))
+	if err != nil {
+		return nil, fmt.Errorf("could not find commit for SHA %s: %v", sha2, err)
+	}
+
+	// Get the tree objects for both commits
+	tree1, err := commit1.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("could not get tree for commit %s: %v", sha1, err)
+	}
+
+	tree2, err := commit2.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("could not get tree for commit %s: %v", sha2, err)
+	}
+
+	// Get the diff between the two trees
+	changes, err := object.DiffTree(tree1, tree2)
+	if err != nil {
+		return nil, fmt.Errorf("could not get diff between trees: %v", err)
+	}
+
+	// Collect the filenames of changed files
+	var diffFiles []string
+	for _, change := range changes {
+		// Append the file name (NewName) to the list of diff files
+		diffFiles = append(diffFiles, change.To.Name)
+	}
+
+	return diffFiles, nil
+}
+
+// filterStrings filters the input strings based on inclusion and exclusion regex patterns.
+func FilterStrings(input []string, includePatterns, excludePatterns []string) ([]string, []string) {
+	var result []string
+	var errors []string
+
+	// Compile inclusion regex patterns
+	var includeRegexes []*regexp.Regexp
+	for _, pattern := range includePatterns {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("failed to compile include pattern %q: %v", pattern, err))
+			continue
+		}
+		includeRegexes = append(includeRegexes, re)
+	}
+
+	// Compile exclusion regex patterns
+	var excludeRegexes []*regexp.Regexp
+	for _, pattern := range excludePatterns {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("failed to compile exclude pattern %q: %v", pattern, err))
+			break
+		}
+		excludeRegexes = append(excludeRegexes, re)
+	}
+
+	// Filter the input strings
+	for _, str := range input {
+		included := false
+		for _, re := range includeRegexes {
+			if re.MatchString(str) {
+				included = true
+				break
+			}
+		}
+
+		if included {
+			excluded := false
+			for _, re := range excludeRegexes {
+				if re.MatchString(str) {
+					excluded = true
+					break
+				}
+			}
+
+			if !excluded {
+				result = append(result, str)
+			}
+		}
+	}
+
+	return result, errors
 }

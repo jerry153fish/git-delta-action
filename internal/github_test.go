@@ -52,15 +52,6 @@ func setup(t *testing.T) (client *github.Client, mux *http.ServeMux, serverURL s
 	return client, mux, server.URL
 }
 
-func contains(slice []string, item string) bool {
-	for _, v := range slice {
-		if v == item {
-			return true
-		}
-	}
-	return false
-}
-
 func TestGetLatestSuccessfulDeploymentSha(t *testing.T) {
 	client, mux, _ := setup(t)
 
@@ -126,25 +117,5 @@ func TestGetBranchLatestSHA(t *testing.T) {
 	}
 	if sha != "abc123" {
 		t.Errorf("Expected deployment SHA abc123, got %s", sha)
-	}
-}
-
-// c6023e778dac2c67e7ec0c42889e349a76414294 839bc7c55038951cfd3fed884617fd80d02ddbd5
-
-func TestGetDiffBetweenCommits(t *testing.T) {
-	sha1 := "c6023e778dac2c67e7ec0c42889e349a76414294"
-	sha2 := "839bc7c55038951cfd3fed884617fd80d02ddbd5"
-
-	result, err := GetDiffBetweenCommits("../", sha1, sha2)
-	if err != nil {
-		t.Fatalf("Error getting diff between commits: %v", err)
-	}
-
-	if result == nil {
-		t.Fatal("Expected non-nil result, got nil")
-	}
-
-	if !contains(result, "Dockerfile") {
-		t.Errorf("Expected Dockerfile to be inside result %v", result)
 	}
 }

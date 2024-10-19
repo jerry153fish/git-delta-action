@@ -52,6 +52,104 @@ func TestGetInputConfig(t *testing.T) {
 	}
 }
 
+func TestGetDiffBetweenCommits(t *testing.T) {
+	sha1 := "c6023e778dac2c67e7ec0c42889e349a76414294"
+	sha2 := "839bc7c55038951cfd3fed884617fd80d02ddbd5"
+
+	result, err := GetDiffBetweenCommits("../", sha1, sha2)
+	if err != nil {
+		t.Fatalf("Error getting diff between commits: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("Expected non-nil result, got nil")
+	}
+
+	expectedDiff := []string{"Dockerfile", "go.mod", "go.sum"}
+
+	if !reflect.DeepEqual(result, expectedDiff) {
+		t.Errorf("GetDiffBetweenCommits() = %v, want %v", result, expectedDiff)
+	}
+}
+
+func TestFilterStrings(t *testing.T) {
+	tests := []struct {
+		input           []string
+		includePatterns []string
+		excludePatterns []string
+		expectedResult  []string
+		expectedErrors  []string
+	}{
+		{
+			input:           []string{"file1.txt", "file2.txt", "file3.log"},
+			includePatterns: []string{".*\\.txt$"},
+			excludePatterns: []string{"file2.txt"},
+			expectedResult:  []string{"file1.txt"},
+			expectedErrors:  []string{},
+		},
+		{
+			input:           []string{"image.png", "document.pdf", "notes.txt"},
+			includePatterns: []string{".*\\.(png|pdf)$"},
+			excludePatterns: []string{"document.pdf"},
+			expectedResult:  []string{"image.png"},
+			expectedErrors:  []string{},
+		},
+		{
+			input:           []string{"test.go", "main.go", "script.js"},
+			includePatterns: []string{".*\\.go$"},
+			excludePatterns: []string{"main.go"},
+			expectedResult:  []string{"test.go"},
+			expectedErrors:  []string{},
+		},
+		{
+			input:           []string{"data.csv", "data.json"},
+			includePatterns: []string{".*\\.csv$"},
+			excludePatterns: []string{".*"},
+			expectedResult:  []string{},
+			expectedErrors:  []string{},
+		},
+		{
+			input:           []string{"aa/bb/data.csv", "data.json", "aa/cc/data.csv", "aa/data.json"},
+			includePatterns: []string{"aa/*"},
+			excludePatterns: []string{"aa/cc/*"},
+			expectedResult:  []string{"aa/bb/data.csv", "aa/data.json"},
+			expectedErrors:  []string{},
+		},
+		{
+			input:           []string{"aa/bb/data.csv", "data.json", "aa/cc/data.csv", "aa/data.json"},
+			includePatterns: []string{"aa/*"},
+			excludePatterns: []string{},
+			expectedResult:  []string{"aa/bb/data.csv", "aa/cc/data.csv", "aa/data.json"},
+			expectedErrors:  []string{},
+		},
+		{
+			input:           []string{"aa/bb/data.csv", "data.json", "aa/cc/data.csv", "aa/data.json"},
+			includePatterns: []string{".*"},
+			excludePatterns: []string{"aa/*"},
+			expectedResult:  []string{"data.json"},
+			expectedErrors:  []string{},
+		},
+	}
+
+	for _, test := range tests {
+		result, errors := FilterStrings(test.input, test.includePatterns, test.excludePatterns)
+
+		if len(result) != len(test.expectedResult) {
+			t.Errorf("expected %v, got %v", test.expectedResult, result)
+		}
+
+		for i, res := range result {
+			if res != test.expectedResult[i] {
+				t.Errorf("expected %v, got %v", test.expectedResult[i], res)
+			}
+		}
+
+		if len(errors) != len(test.expectedErrors) {
+			t.Errorf("expected errors %v, got %v", test.expectedErrors, errors)
+		}
+	}
+}
+
 func TestMain(m *testing.M) {
 	// Run tests
 	code := m.Run()
