@@ -14,20 +14,20 @@ inputs:
   commit:
     description: 'Commit to compare against'
     required: false
-  files:
+  includes:
     description: |
-      'Files to show the delta with separator as `\n`'
+      "File patterns to include in the delta calculation, separated by newlines `\n`"
       For example: 
-        files: |
+        includes: |
           live/local/*
           live/stag/ec2/terragrunt.hcl
     required: false
     default: ""
-  ignore_files:
+  excludes:
     description: |
-      "Ignore patterns for the delta with separator as `\n`"
-            For example: 
-        files_ignore: |
+      "File patterns to exclude in the delta calculation, separated by newlines `\n` Note excludes are applied after includes."
+      For example: 
+        excludes: |
           *.zip
           */**/README.md
     required: false

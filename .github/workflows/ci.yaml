@@ -51,10 +51,10 @@ jobs:
         with:
           environment: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          files: |
+          includes: |
             internal/*
             .github/*
-          ignore_files: |
+          excludes: |
             *.zip
             internal/.*test.go
 

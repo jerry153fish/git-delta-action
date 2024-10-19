@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 
@@ -65,11 +66,19 @@ func GetLatestSuccessfulDeploymentSha(client *github.Client, cfg *InputConfig) s
 
 // extractOwnerRepo takes a repository string in the format "owner/repo"
 // and splits it into the owner and repository name.
-func extractOwnerRepo(repo string) (string, string) {
-	// Split the repo string by the "/" character to separate owner and repo name
+func extractOwnerRepo(repo string) (owner, repoName string) {
 	parts := strings.Split(repo, "/")
-	// Return the owner (second to last part) and repo name (last part)
-	return parts[len(parts)-2], parts[len(parts)-1]
+	if len(parts) == 0 {
+		return "", ""
+	}
+
+	if len(parts) == 1 {
+		return "", parts[0]
+	}
+
+	repoName = parts[len(parts)-1]
+	owner = strings.Join(parts[:len(parts)-1], "/")
+	return owner, repoName
 }
 
 // GetClient creates a new GitHub client with the provided configuration.
@@ -77,4 +86,34 @@ func GetClient(c *InputConfig) *github.Client {
 	// Create a new GitHub client with no initial HTTP client.
 	// Authenticate the client using the provided GitHub token.
 	return github.NewClient(nil).WithAuthToken(c.GithubToken)
+}
+
+// CompareSHAs compares the commits between the base SHA and the current SHA for the
+// specified repository, and returns a list of the filenames that have changed.
+//
+// client is the GitHub API client to use for the comparison.
+// cfg is the input configuration containing the repository information and the current SHA.
+// baseSHA is the base SHA to compare against.
+//
+// Returns a slice of filenames that have changed between the base SHA and the current SHA.
+// If an error occurs during the comparison, an error is returned.
+func CompareSHAs(client *github.Client, cfg *InputConfig, baseSHA string) ([]string, error) {
+	// Create a background context for the GitHub API calls
+	ctx := context.Background()
+	// Extract the owner and repository names from the full repository path
+	owner, repo := extractOwnerRepo(cfg.Repo)
+
+	// Compare the commits between the base SHA and the current SHA
+	comparison, _, err := client.Repositories.CompareCommits(ctx, owner, repo, baseSHA, cfg.Sha, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error comparing commits: %v", err)
+	}
+
+	// Extract the filenames from the comparison
+	var fileNames []string
+	for _, file := range comparison.Files {
+		fileNames = append(fileNames, file.GetFilename())
+	}
+
+	return fileNames, nil
 }

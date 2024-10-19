@@ -53,6 +53,7 @@ func setup(t *testing.T) (client *github.Client, mux *http.ServeMux, serverURL s
 }
 
 func TestGetLatestSuccessfulDeploymentSha(t *testing.T) {
+	t.Parallel()
 	client, mux, _ := setup(t)
 
 	// Mock the ListDeployments endpoint
@@ -85,6 +86,7 @@ func TestGetLatestSuccessfulDeploymentSha(t *testing.T) {
 }
 
 func TestGetBranchLatestSHA(t *testing.T) {
+	t.Parallel()
 	client, mux, _ := setup(t)
 
 	// Mock the ListDeployments endpoint
@@ -117,5 +119,127 @@ func TestGetBranchLatestSHA(t *testing.T) {
 	}
 	if sha != "abc123" {
 		t.Errorf("Expected deployment SHA abc123, got %s", sha)
+	}
+}
+func TestCompareSHAs(t *testing.T) {
+	t.Parallel()
+	client, mux, _ := setup(t)
+
+	testCases := []struct {
+		name          string
+		baseSHA       string
+		currentSHA    string
+		expectedFiles []string
+		expectedError bool
+		mockResponse  string
+	}{
+		{
+			name:          "Successful comparison",
+			baseSHA:       "c6023e778dac2c67e7ec0c42889e349a76414292",
+			currentSHA:    "839bc7c55038951cfd3fed884617fd80d02ddbd4",
+			expectedFiles: []string{"file1.txt", "file2.go"},
+			expectedError: false,
+			mockResponse:  `{"files": [{"filename": "file1.txt"}, {"filename": "file2.go"}]}`,
+		},
+		{
+			name:          "Empty comparison",
+			baseSHA:       "c6023e778dac2c67e7ec0c42889e349a76414294",
+			currentSHA:    "839bc7c55038951cfd3fed884617fd80d02ddbd5",
+			expectedFiles: []string{},
+			expectedError: false,
+			mockResponse:  `{"files": []}`,
+		},
+		{
+			name:          "Error response",
+			baseSHA:       "c6023e778dac2c67e7ec0c42889e349a76414298",
+			currentSHA:    "839bc7c55038951cfd3fed884617fd80d02ddbd1",
+			expectedFiles: nil,
+			expectedError: true,
+			mockResponse:  `{"message": "Not Found", "documentation_url": "https://docs.github.com/rest/reference/repos#compare-two-commits"}`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mux.HandleFunc(fmt.Sprintf("/repos/owner/repo/compare/%s...%s", tc.baseSHA, tc.currentSHA), func(w http.ResponseWriter, r *http.Request) {
+				if tc.expectedError {
+					w.WriteHeader(http.StatusNotFound)
+				}
+				fmt.Fprint(w, tc.mockResponse)
+			})
+
+			cfg := &InputConfig{
+				Repo: "owner/repo",
+				Sha:  tc.currentSHA,
+			}
+
+			files, err := CompareSHAs(client, cfg, tc.baseSHA)
+
+			if tc.expectedError {
+				if err == nil {
+					t.Errorf("Expected an error, but got nil")
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error: %v", err)
+				}
+
+				if len(files) != len(tc.expectedFiles) {
+					t.Errorf("Expected %d files, but got %d", len(tc.expectedFiles), len(files))
+				}
+				for i, file := range files {
+					if file != tc.expectedFiles[i] {
+						t.Errorf("Expected file %s, but got %s", tc.expectedFiles[i], file)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestExtractOwnerRepo(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name          string
+		repo          string
+		expectedOwner string
+		expectedRepo  string
+	}{
+		{
+			name:          "Valid repo format",
+			repo:          "owner/repo",
+			expectedOwner: "owner",
+			expectedRepo:  "repo",
+		},
+		{
+			name:          "Repo with multiple slashes",
+			repo:          "org/owner/repo",
+			expectedOwner: "org/owner",
+			expectedRepo:  "repo",
+		},
+		{
+			name:          "Repo without slash",
+			repo:          "invalidrepo",
+			expectedOwner: "",
+			expectedRepo:  "invalidrepo",
+		},
+		{
+			name:          "Empty repo",
+			repo:          "",
+			expectedOwner: "",
+			expectedRepo:  "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			owner, repo := extractOwnerRepo(tc.repo)
+			if owner != tc.expectedOwner {
+				t.Errorf("Expected owner %s, but got %s", tc.expectedOwner, owner)
+			}
+			if repo != tc.expectedRepo {
+				t.Errorf("Expected repo %s, but got %s", tc.expectedRepo, repo)
+			}
+		})
 	}
 }
