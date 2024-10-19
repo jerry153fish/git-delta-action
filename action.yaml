@@ -1,6 +1,9 @@
 name: 'Git Delta'
 description: 'Show git diff with delta for a specific files against environments/branches/commits'
 inputs:
+  github_token:
+    description: 'Github token for query github rest api if compare against environments'
+    required: false
   environment:
     description: 'Environment to compare against'
     required: false
@@ -12,15 +15,21 @@ inputs:
     description: 'Commit to compare against'
     required: false
   files:
-    description: 'Files to show the delta for'
+    description: |
+      'Files to show the delta with separator as `\n`'
+      For example: 
+        files: |
+          live/local/*
+          live/stag/ec2/terragrunt.hcl
     required: false
     default: ""
-  files_separator:
-    description: "Separator used to split the files and file ignore patterns"
-    default: "\n"
-    required: false
-  files_ignore:
-    description: "Ignore patterns for the delta"
+  ignore_files:
+    description: |
+      "Ignore patterns for the delta with separator as `\n`"
+            For example: 
+        files_ignore: |
+          *.zip
+          */**/README.md
     required: false
     default: ""
   delta_output_path_depth:
