@@ -10,11 +10,11 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY main.go main.go
-COPY internal/ internal/
+# COPY internal/ internal/
 
 RUN go build -o main .
 
-FROM gcr.io/distroless/base
+FROM gcr.io/distroless/static-debian12
 
 # Copy the Go binary from the builder stage
 COPY --from=builder /app/main /usr/local/bin/main
