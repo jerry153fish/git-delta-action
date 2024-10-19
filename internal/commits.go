@@ -200,26 +200,26 @@ func isValidRegex(pattern string) (bool, error) {
 }
 
 // SetGitHubOutput sets a GitHub Actions output variable.
-func SetGitHubOutput(name, value string) error {
+func SetGitHubOutput(name, value string) {
 	// Get the GITHUB_OUTPUT environment variable
 	outputFile := os.Getenv("GITHUB_OUTPUT")
 	if outputFile == "" {
-		return fmt.Errorf("GITHUB_OUTPUT is not set")
+		log.Println("GITHUB_OUTPUT is not set")
+		return
 	}
 
 	// Write the output to the environment file
 	f, err := os.OpenFile(outputFile, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
-		return fmt.Errorf("failed to open output file: %v", err)
+		log.Printf("failed to open output file: %v", err)
+		return
 	}
 	defer f.Close()
 
 	// Format the output and write it to the file
 	if _, err := f.WriteString(fmt.Sprintf("%s=%s\n", name, value)); err != nil {
-		return fmt.Errorf("failed to write output: %v", err)
+		log.Printf("failed to write output: %v", err)
 	}
-
-	return nil
 }
 
 func Delta() {
@@ -238,17 +238,13 @@ func Delta() {
 		log.Fatalf("Error getting diff between commits: %v", err)
 	}
 
-	log.Println(diffs)
-
 	deltas := FilterStrings(diffs, cfg.FilePatterns, cfg.IgnoreFilePatterns)
-
-	log.Println(deltas)
 
 	if len(deltas) > 0 {
 		SetGitHubOutput("is_detected", "true")
 		jsonData, err := json.Marshal(deltas)
 		if err != nil {
-			log.Println("Error marshalling to JSON: %v", err)
+			log.Printf("Error marshalling to JSON: %v", err)
 		}
 		SetGitHubOutput("delta_files", string(jsonData))
 	} else {
