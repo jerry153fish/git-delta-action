@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/jerry153fish/git-delta/internal"
+	internal "github.com/jerry153fish/git-delta/internal/pkg"
 )
 
 func main() {
-	internal.Delta()
+	internal.Delta(".")
 }

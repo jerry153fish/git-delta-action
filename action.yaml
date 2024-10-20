@@ -8,44 +8,40 @@ inputs:
     description: 'Environment to compare against'
     required: false
   branch:
-    description: 'Branch to compare against'
+    description: 'Base branch to compare against'
     required: false
     default: 'main'
   commit:
     description: 'Commit to compare against'
     required: false
-  files:
+  includes:
     description: |
-      'Files to show the delta with separator as `\n`'
+      "File patterns to include in the delta calculation, separated by newlines `\n`"
       For example: 
-        files: |
+        includes: |
           live/local/*
           live/stag/ec2/terragrunt.hcl
     required: false
     default: ""
-  ignore_files:
+  excludes:
     description: |
-      "Ignore patterns for the delta with separator as `\n`"
-            For example: 
-        files_ignore: |
+      "File patterns to exclude in the delta calculation, separated by newlines `\n` Note excludes are applied after includes."
+      For example: 
+        excludes: |
           *.zip
           */**/README.md
     required: false
     default: ""
-  delta_output_path_depth:
+  offline:
     description: |
-      Use `0` for the full path.
-      Use a positive number (`> 0`) for breadth-first level:
-      For example, `1` will return `/root/level1` from `/root/level1/level2/changed.txt`.
-      Use a negative number (`< 0`) for depth-first level:
-      For example, `-1` will return `/root/level1/level2` from `/root/level1/level2/changed.txt`.
+      "If true, git delta will be run offline, otherwise it will be run online against github api"
     required: false
-    default: 0
+    default: true
 outputs:
   delta_files:
-    description: 'File paths with the delta as json string format'
+    description: "File paths with the delta as json string format"
   is_detected:
-    description: 'Bool to show if delta has been detected'
+    description: "Bool to show if delta has been detected"
 runs:
   using: 'docker'
   image: 'docker://jerry153fish/git-delta:latest'
