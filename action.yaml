@@ -1,4 +1,4 @@
-name: 'Git Delta'
+name: 'Git Delta Action'
 description: 'Show git diff with delta for a specific files against environments/branches/commits'
 inputs:
   github_token:
