@@ -27,7 +27,7 @@ func GetLatestSuccessfulDeploymentSha(client *github.Client, cfg *InputConfig) s
 		// List all deployment by page
 		deployments, resp, err := client.Repositories.ListDeployments(ctx, owner, repo, opt)
 		if err != nil {
-			log.Fatalf("Error listing deployments: %v", err)
+			log.Panicf("Error listing deployments: %v", err)
 		}
 		// Check if the deployment has a successful state
 		for _, deployment := range deployments {

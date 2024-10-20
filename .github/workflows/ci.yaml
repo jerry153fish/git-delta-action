@@ -51,12 +51,6 @@ jobs:
         with:
           environment: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          includes: |
-            internal/*
-            .github/*
-          excludes: |
-            .*\\.zip
-            internal/.*test.go
 
       - name: Print Delta Output for environment online
         run: |
@@ -71,11 +65,9 @@ jobs:
           online: false
           github_token: ${{ secrets.GITHUB_TOKEN }}
           includes: |
-            internal/*
-            .github/*
+            **/*
           excludes: |
-            .*\\.zip
-            internal/.*test.go
+            **/*_test.go
 
       - name: Print Delta Output for environment offline
         run: |
@@ -84,16 +76,14 @@ jobs:
 
       - name: Get Delta against main branch with online mode
         uses: ./
-        id: 
+        id: delta-branch-online
         with:
           branch: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
           includes: |
-            internal/*
-            .github/*
-          excludes: |
-            .*\\.zip
-            internal/.*test.go
+            internal/**/*
+            .github/**/*
+
 
       - name: Print Delta Output for branch online
         run: |
@@ -108,16 +98,15 @@ jobs:
           online: false
           github_token: ${{ secrets.GITHUB_TOKEN }}
           includes: |
-            internal/*
-            .github/*
+            internal/**/*
+            .github/**/*
           excludes: |
-            .*\\.zip
-            internal/.*test.go
+            **/*.md
 
       - name: Print Delta Output for branch offline
         run: |
-          echo "Delta flag: ${{ steps.delta-branch-offline.outputs.is_detected }}"
-          echo "Delta flag: ${{ steps.delta-branch-offline.outputs.delta_files }}"
+          echo "Delta branch offline flag: ${{ steps.delta-branch-offline.outputs.is_detected }}"
+          echo "Delta branch offline: ${{ steps.delta-branch-offline.outputs.delta_files }}"
 
       - name: Restore action.yaml
         if: always()

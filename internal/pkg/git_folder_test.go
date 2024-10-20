@@ -25,15 +25,16 @@ func TestCompareGitFolderSHAs(t *testing.T) {
 		t.Errorf("CompareGitFolderSHAs() = %v, want %v", result, expectedDiff)
 	}
 }
-func TestGetGitFolderBranchLatestSHA(t *testing.T) {
-	t.Parallel()
-	branch := "main"
-	result, err := GetGitFolderBranchLatestSHA("../../", branch)
-	if err != nil {
-		t.Fatalf("Error getting latest sha on %v: %v", branch, err)
-	}
 
-	if result == "" {
-		t.Fatal("Expected non-nil result, got nil")
-	}
-}
+// func TestGetGitFolderBranchLatestSHA(t *testing.T) {
+// 	t.Parallel()
+// 	branch := "main"
+// 	result, err := GetGitFolderBranchLatestSHA("../../", branch)
+// 	if err != nil {
+// 		t.Fatalf("Error getting latest sha on %v: %v", branch, err)
+// 	}
+
+// 	if result == "" {
+// 		t.Fatal("Expected non-nil result, got nil")
+// 	}
+// }

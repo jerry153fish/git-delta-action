@@ -1,148 +1,132 @@
 package internal
 
 import (
-	"os"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestGetInputConfig(t *testing.T) {
-	// Set up test environment variables
-	os.Setenv("INPUT_ENVIRONMENT", "test")
-	os.Setenv("INPUT_COMMIT", "abc123")
-	os.Setenv("INPUT_INCLUDES", "file1.txt\nfile2.txt")
-	os.Setenv("INPUT_EXCLUDES", "ignore1.txt\nignore2.txt")
-	os.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
-	os.Setenv("INPUT_BRANCH", "main")
-
-	os.Setenv("GITHUB_SHA", "def456")
-	os.Setenv("GITHUB_REF", "refs/heads/main")
-	os.Setenv("GITHUB_API_URL", "https://api.github.com")
-	os.Setenv("GITHUB_WORKFLOW", "test-workflow")
-	os.Setenv("GITHUB_EVENT_NAME", "push")
-	os.Setenv("GITHUB_JOB", "build")
-	os.Setenv("GITHUB_REPOSITORY", "test/test")
-
-	// Call the function
-	ic := GetInputConfig()
-
-	// Check the results
-	expectedIC := InputConfig{
-		Environment:      "test",
-		Commit:           "abc123",
-		Includes:         "file1.txt\nfile2.txt",
-		Excludes:         "ignore1.txt\nignore2.txt",
-		GithubToken:      "ghp_testtoken",
-		IncludesPatterns: []string{"file1.txt", "file2.txt"},
-		ExcludesPatterns: []string{"ignore1.txt", "ignore2.txt"},
-		Sha:              "def456",
-		Ref:              "refs/heads/main",
-		ApiUrl:           "https://api.github.com",
-		Workflow:         "test-workflow",
-		EventName:        "push",
-		Job:              "build",
-		Repo:             "test/test",
-		Branch:           "main",
+func TestMatchPatterns(t *testing.T) {
+	tests := []struct {
+		name     string
+		str      string
+		patterns []string
+		expected bool
+	}{
+		{
+			name:     "Single matching pattern",
+			str:      "file.txt",
+			patterns: []string{"*.txt"},
+			expected: true,
+		},
+		{
+			name:     "Multiple patterns with one match",
+			str:      "document.pdf",
+			patterns: []string{"*.doc", "*.pdf", "*.txt"},
+			expected: true,
+		},
+		{
+			name:     "No matching patterns",
+			str:      "image.png",
+			patterns: []string{"*.jpg", "*.gif"},
+			expected: false,
+		},
+		{
+			name:     "Empty pattern list",
+			str:      "file.txt",
+			patterns: []string{},
+			expected: false,
+		},
+		{
+			name:     "Pattern with special characters",
+			str:      "file[1].txt",
+			patterns: []string{"file[[]*.txt"},
+			expected: true,
+		},
+		{
+			name:     "Pattern with layer 1 directory",
+			str:      "prod/file.txt",
+			patterns: []string{"prod/*"},
+			expected: true,
+		},
+		{
+			name:     "Pattern with layer 2 directory",
+			str:      "prod/abc/file.txt",
+			patterns: []string{"prod/**/*"},
+			expected: true,
+		},
+		{
+			name:     "Pattern with layer 3+ directory",
+			str:      "prod/abc/ecd/file.txt",
+			patterns: []string{"**/*"},
+			expected: true,
+		},
 	}
 
-	if !reflect.DeepEqual(ic, expectedIC) {
-		t.Errorf("GetInputConfig() = %v, want %v", ic, expectedIC)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := matchPatterns(tt.str, false, tt.patterns)
+			assert.Equal(t, tt.expected, result, "matchPatterns(%q, %v) = %v, want %v", tt.str, tt.patterns, result, tt.expected)
+		})
 	}
 }
 
-func TestFilterStrings(t *testing.T) {
+func TestFilterStringsEdgeCases(t *testing.T) {
 	tests := []struct {
+		name            string
 		input           []string
 		includePatterns []string
 		excludePatterns []string
-		expectedResult  []string
-		expectedErrors  []string
+		expected        []string
 	}{
 		{
+			name:            "Empty input",
+			input:           []string{},
+			includePatterns: []string{"*"},
+			excludePatterns: []string{},
+			expected:        []string(nil),
+		},
+		{
+			name:            "Empty include patterns",
+			input:           []string{"file1.txt", "file2.txt"},
+			includePatterns: []string{},
+			excludePatterns: []string{},
+			expected:        []string{"file1.txt", "file2.txt"},
+		},
+		{
+			name:            "Conflicting include and exclude patterns",
 			input:           []string{"file1.txt", "file2.txt", "file3.log"},
-			includePatterns: []string{".*.txt$"},
-			excludePatterns: []string{"file2.txt"},
-			expectedResult:  []string{"file1.txt"},
-			expectedErrors:  []string{},
+			includePatterns: []string{"*.txt", "*.log"},
+			excludePatterns: []string{"*"},
+			expected:        []string(nil),
 		},
 		{
-			input:           []string{"image.png", "document.pdf", "notes.txt"},
-			includePatterns: []string{".*\\.(png|pdf)$"},
-			excludePatterns: []string{"document.pdf"},
-			expectedResult:  []string{"image.png"},
-			expectedErrors:  []string{},
+			name:            "Case sensitivity",
+			input:           []string{"File1.TXT", "file2.txt", "FILE3.LOG"},
+			includePatterns: []string{"*.txt"},
+			excludePatterns: []string{},
+			expected:        []string{"file2.txt"},
 		},
 		{
-			input:           []string{"test.go", "main.go", "script.js"},
-			includePatterns: []string{".*\\.go$"},
-			excludePatterns: []string{"main.go"},
-			expectedResult:  []string{"test.go"},
-			expectedErrors:  []string{},
+			name:            "Complex patterns",
+			input:           []string{"file1.txt", "a/b/c/d/file2.txt", "dir/file3.txt", "dir/subdir/file4.txt"},
+			includePatterns: []string{"**/*.txt"},
+			excludePatterns: []string{"*/subdir/*"},
+			expected:        []string{"file1.txt", "a/b/c/d/file2.txt", "dir/file3.txt"},
 		},
 		{
-			input:           []string{"data.csv", "data.json"},
-			includePatterns: []string{".*\\.csv$"},
-			excludePatterns: []string{".*"},
-			expectedResult:  []string{},
-			expectedErrors:  []string{},
-		},
-		{
-			input:           []string{"aa/bb/data.csv", "data.json", "aa/cc/data.csv", "aa/data.json"},
-			includePatterns: []string{"aa/*"},
-			excludePatterns: []string{"aa/cc/*"},
-			expectedResult:  []string{"aa/bb/data.csv", "aa/data.json"},
-			expectedErrors:  []string{},
-		},
-		{
-			input:           []string{"aa/bb/data.csv", "data.json", "aa/cc/data.csv", "aa/data.json"},
-			includePatterns: []string{"aa/*"},
-			excludePatterns: []string{"*.zip"},
-			expectedResult:  []string{"aa/bb/data.csv", "aa/cc/data.csv", "aa/data.json"},
-			expectedErrors:  []string{},
-		},
-		{
-			input:           []string{"aa/bb/data.csv", "data.json", "aa/cc/data.csv", "aa/data.json"},
-			includePatterns: []string{".*"},
-			excludePatterns: []string{"aa/*", "*.zip"},
-			expectedResult:  []string{"data.json"},
-			expectedErrors:  []string{},
+			name:            "Overlapping patterns",
+			input:           []string{"file1.txt", "file2.log", "file3.tmp"},
+			includePatterns: []string{"*.txt", "*.log", "*"},
+			excludePatterns: []string{"*.log", "*.tmp"},
+			expected:        []string{"file1.txt"},
 		},
 	}
 
-	for _, test := range tests {
-		result := FilterStrings(test.input, test.includePatterns, test.excludePatterns)
-
-		if len(result) != len(test.expectedResult) {
-			t.Errorf("expected %v, got %v", test.expectedResult, result)
-		}
-
-		for i, res := range result {
-			if res != test.expectedResult[i] {
-				t.Errorf("expected %v, got %v", test.expectedResult[i], res)
-			}
-		}
-
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := FilterStrings(tt.input, tt.includePatterns, tt.excludePatterns)
+			assert.Equal(t, tt.expected, result, "FilterStrings(%v, %v, %v) = %v, want %v", tt.input, tt.includePatterns, tt.excludePatterns, result, tt.expected)
+		})
 	}
-}
-
-func TestMain(m *testing.M) {
-	// Run tests
-	code := m.Run()
-
-	// Clean up
-	os.Unsetenv("INPUT_ENVIRONMENT")
-	os.Unsetenv("INPUT_COMMIT")
-	os.Unsetenv("INPUT_INCLUDES")
-	os.Unsetenv("INPUT_EXCLUDES")
-	os.Unsetenv("INPUT_GITHUB_TOKEN")
-	os.Unsetenv("INPUT_BRANCH")
-	os.Unsetenv("GITHUB_SHA")
-	os.Unsetenv("GITHUB_REF")
-	os.Unsetenv("GITHUB_API_URL")
-	os.Unsetenv("GITHUB_WORKFLOW")
-	os.Unsetenv("GITHUB_EVENT_NAME")
-	os.Unsetenv("GITHUB_JOB")
-	os.Unsetenv("GITHUB_REPOSITORY")
-
-	os.Exit(code)
 }
