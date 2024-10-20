@@ -1,7 +1,3 @@
-Based on the contents of the `action.yaml` file, here's a README template for the "Git Delta" GitHub Action:
-
----
-
 # Git Delta Action
 
 This GitHub Action helps you visualize and manage file changes (deltas) across different environments, branches, or commits. It uses the `delta` tool to show diffs for specific files and folders, providing insights either offline or by querying GitHub via its REST API.
@@ -26,7 +22,7 @@ This GitHub Action helps you visualize and manage file changes (deltas) across d
 
 ### Example of `includes` and `excludes`
 
-
+```
 includes: |
   live/local/*
   live/stag/ec2/terragrunt.hcl
@@ -34,7 +30,7 @@ includes: |
 excludes: |
   *.zip
   */**/README.md
-
+```
 
 ## Outputs
 
@@ -47,7 +43,7 @@ excludes: |
 
 Here's an example of how to use this action in your workflow:
 
-
+```yaml
 name: Check Git Delta
 
 on: [push, pull_request]
@@ -60,7 +56,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run Git Delta
-        uses: your-org/git-delta-action@v1
+        uses: jerry153fish/git-delta-action@v0.0.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: 'main'
@@ -70,7 +66,7 @@ jobs:
             modules/*
           excludes: |
             **/*.md
-
+```
 
 In this example, the Git Delta action compares the current branch against the `main` branch, considering only files in `live/prod//` and `live/prod//` while excluding markdown files (`*.md`).
 
