@@ -85,7 +85,7 @@ func TestGetLatestSuccessfulDeploymentSha(t *testing.T) {
 	}
 }
 
-func TestGetBranchLatestSHA(t *testing.T) {
+func TestGetGitHubBranchLatestSHA(t *testing.T) {
 	t.Parallel()
 	client, mux, _ := setup(t)
 
@@ -111,7 +111,7 @@ func TestGetBranchLatestSHA(t *testing.T) {
 	}
 
 	// Call the function under test
-	sha := GetBranchLatestSHA(client, testConfig)
+	sha := GetGitHubBranchLatestSHA(client, testConfig)
 
 	// Assert the results
 	if sha == "" {
@@ -121,7 +121,7 @@ func TestGetBranchLatestSHA(t *testing.T) {
 		t.Errorf("Expected deployment SHA abc123, got %s", sha)
 	}
 }
-func TestCompareSHAs(t *testing.T) {
+func TestCompareGithubSHAs(t *testing.T) {
 	t.Parallel()
 	client, mux, _ := setup(t)
 
@@ -173,7 +173,7 @@ func TestCompareSHAs(t *testing.T) {
 				Sha:  tc.currentSHA,
 			}
 
-			files, err := CompareSHAs(client, cfg, tc.baseSHA)
+			files, err := CompareGithubSHAs(client, cfg, tc.baseSHA)
 
 			if tc.expectedError {
 				if err == nil {

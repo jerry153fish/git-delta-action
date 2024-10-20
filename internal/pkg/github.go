@@ -64,6 +64,24 @@ func GetLatestSuccessfulDeploymentSha(client *github.Client, cfg *InputConfig) s
 	return ""
 }
 
+// GetLatestSHA retrieves the latest commit SHA for a specified branch in a repository.
+func GetGitHubBranchLatestSHA(client *github.Client, cfg *InputConfig) string {
+	// Create a background context for the GitHub API calls
+	ctx := context.Background()
+	// Extract the owner and repository names from the full repository path
+	owner, repo := extractOwnerRepo(cfg.Repo)
+
+	// Get the reference for the specified branch
+	ref, _, err := client.Git.GetRef(ctx, owner, repo, "refs/heads/"+cfg.Branch)
+	if err != nil {
+		log.Printf("Error retrieving SHA for branch '%s' in repository '%s': %v", cfg.Branch, cfg.Repo, err)
+		return ""
+	}
+	log.Printf("Latest successful Sha for Brach %s, SHA %s", cfg.Branch, ref.Object.GetSHA())
+	// Return the SHA of the latest commit
+	return ref.Object.GetSHA()
+}
+
 // extractOwnerRepo takes a repository string in the format "owner/repo"
 // and splits it into the owner and repository name.
 func extractOwnerRepo(repo string) (owner, repoName string) {
@@ -88,7 +106,7 @@ func GetClient(c *InputConfig) *github.Client {
 	return github.NewClient(nil).WithAuthToken(c.GithubToken)
 }
 
-// CompareSHAs compares the commits between the base SHA and the current SHA for the
+// CompareGithubSHAs compares the commits between the base SHA and the current SHA for the
 // specified repository, and returns a list of the filenames that have changed.
 //
 // client is the GitHub API client to use for the comparison.
@@ -97,7 +115,7 @@ func GetClient(c *InputConfig) *github.Client {
 //
 // Returns a slice of filenames that have changed between the base SHA and the current SHA.
 // If an error occurs during the comparison, an error is returned.
-func CompareSHAs(client *github.Client, cfg *InputConfig, baseSHA string) ([]string, error) {
+func CompareGithubSHAs(client *github.Client, cfg *InputConfig, baseSHA string) ([]string, error) {
 	// Create a background context for the GitHub API calls
 	ctx := context.Background()
 	// Extract the owner and repository names from the full repository path
