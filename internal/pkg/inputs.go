@@ -2,9 +2,9 @@ package internal
 
 import (
 	"log"
-	"regexp"
 	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/caarlos0/env/v11"
 )
 
@@ -39,7 +39,7 @@ func GetInputConfig() InputConfig {
 	// Parse environment variables into InputConfig struct
 	c, err := env.ParseAs[InputConfig]()
 	if err != nil {
-		log.Fatalf("Failed to parse InputConfig: %v", err)
+		log.Panicf("Failed to parse InputConfig: %v", err)
 	}
 
 	// If Includes is not empty, split it into IncludesPatterns
@@ -57,22 +57,22 @@ func GetInputConfig() InputConfig {
 // Validate checks if the required fields in InputConfig are set
 func (c *InputConfig) Validate() {
 	if c.Environment != "" && c.GithubToken == "" {
-		log.Fatal("github_token must be specific when the environment is given")
+		log.Panic("github_token must be specific when the environment is given")
 	}
 
 	if c.online == "true" {
 		if c.GithubToken == "" {
-			log.Fatal("github_token must be specific when online is set to true")
+			log.Panic("github_token must be specific when online is set to true")
 		}
 	} else {
 		log.Println("Warning: Offline mode might need the entire git history. Ensure the git clone depth is set to 0.")
 	}
 
 	if c.Repo == "" {
-		log.Fatal("Unexpected error for retrieve repository from runner, please contact developer")
+		log.Panic("Unexpected error for retrieve repository from runner, please contact developer")
 	}
 	if c.Sha == "" {
-		log.Fatal("Unexpected error for retrieve current commit from runner, please contact developer")
+		log.Panic("Unexpected error for retrieve current commit from runner, please contact developer")
 	}
 
 	validatePatterns(c.IncludesPatterns)
@@ -84,19 +84,10 @@ func (c *InputConfig) Validate() {
 func validatePatterns(patterns []string) {
 	if len(patterns) > 0 {
 		for _, pattern := range patterns {
-			valid, err := isValidRegex(pattern)
-			if !valid {
-				log.Fatalf("Invalid regex pattern in IncludesPatterns: %s. Error: %v", pattern, err)
+			_, err := doublestar.Match(pattern, "dummy")
+			if err != nil {
+				log.Panicf("Error matching pattern '%s': %v", pattern, err)
 			}
 		}
 	}
-}
-
-// isValidRegex checks if the provided string is a valid regular expression.
-func isValidRegex(pattern string) (bool, error) {
-	_, err := regexp.Compile(pattern)
-	if err != nil {
-		return false, err // Return false and the error
-	}
-	return true, nil // Return true if no error
 }

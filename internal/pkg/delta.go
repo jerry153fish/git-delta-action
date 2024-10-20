@@ -5,61 +5,41 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
+
+	"github.com/bmatcuk/doublestar/v4"
 )
 
-// filterStrings filters the input strings based on inclusion and exclusion regex patterns.
+// matchPatterns checks if the string matches any of the patterns using filepath.Match.
+func matchPatterns(str string, include bool, patterns []string) bool {
+	if len(patterns) == 0 {
+		return include
+	}
+
+	for _, pattern := range patterns {
+		if pattern != "" {
+			matched, err := doublestar.Match(pattern, str)
+			if err != nil {
+				log.Printf("Error matching pattern '%s': %v", pattern, err)
+				continue
+			}
+			if matched {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// FilterStrings filters the input strings based on inclusion and exclusion patterns using filepath.Match.
 func FilterStrings(input []string, includePatterns, excludePatterns []string) []string {
 	var result []string
 
-	// Compile inclusion regex patterns
-	var includeRegexes []*regexp.Regexp
-	for _, pattern := range includePatterns {
-		if pattern != "" {
-			valid, err := isValidRegex(pattern)
-			if valid {
-				re, _ := regexp.Compile(pattern)
-				includeRegexes = append(includeRegexes, re)
-			} else {
-				fmt.Printf("The included pattern '%s' is an illegal regex: %v\n", pattern, err)
-			}
-		}
-	}
-
-	// Compile exclusion regex patterns
-	var excludeRegexes []*regexp.Regexp
-	for _, pattern := range excludePatterns {
-		if pattern != "" {
-			valid, err := isValidRegex(pattern)
-			if valid {
-				re, _ := regexp.Compile(pattern)
-				excludeRegexes = append(excludeRegexes, re)
-			} else {
-				fmt.Printf("The excluded pattern '%s' is an illegal regex: %v\n", pattern, err)
-			}
-		}
-	}
-
 	// Filter the input strings
 	for _, str := range input {
-		included := false
-		for _, re := range includeRegexes {
-			if re != nil && re.MatchString(str) {
-				included = true
-				break
-			}
-		}
-
-		if included {
-			excluded := false
-			for _, re := range excludeRegexes {
-				if re.MatchString(str) {
-					excluded = true
-					break
-				}
-			}
-
-			if !excluded {
+		// Check if the string matches any include pattern
+		if matchPatterns(str, true, includePatterns) {
+			// If it matches an include pattern, check that it doesn't match any exclude pattern
+			if !matchPatterns(str, false, excludePatterns) {
 				result = append(result, str)
 			}
 		}
@@ -112,12 +92,12 @@ func Delta(repoPath string) {
 	if cfg.online == "true" {
 		diffs, err = CompareGithubSHAs(client, &cfg, baseSha)
 		if err != nil {
-			log.Fatalf("Error getting diff between commits: %v", err)
+			log.Panicf("Error getting diff between commits: %v", err)
 		}
 	} else {
 		diffs, err = CompareGitFolderSHAs(repoPath, baseSha, cfg.Sha)
 		if err != nil {
-			log.Fatalf("Error getting diff between commits: %v", err)
+			log.Panicf("Error getting diff between commits: %v", err)
 		}
 	}
 

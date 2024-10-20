@@ -55,8 +55,8 @@ jobs:
             internal/*
             .github/*
           excludes: |
-            .*\\.zip
-            internal/.*test.go
+            *.zip
+            internal/*test.go
 
       - name: Print Delta Output for environment online
         run: |
@@ -74,8 +74,8 @@ jobs:
             internal/*
             .github/*
           excludes: |
-            .*\\.zip
-            internal/.*test.go
+            *.zip
+            internal/*test.go
 
       - name: Print Delta Output for environment offline
         run: |
@@ -84,7 +84,7 @@ jobs:
 
       - name: Get Delta against main branch with online mode
         uses: ./
-        id: 
+        id: delta-branch-online
         with:
           branch: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -92,8 +92,8 @@ jobs:
             internal/*
             .github/*
           excludes: |
-            .*\\.zip
-            internal/.*test.go
+            *.zip
+            internal/*test.go
 
       - name: Print Delta Output for branch online
         run: |

@@ -2,7 +2,10 @@ package internal
 
 import (
 	"os"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetInputConfigWithEmptyEnvironment(t *testing.T) {
@@ -109,98 +112,179 @@ func TestGetInputConfigWithEmptyOptionalFields(t *testing.T) {
 		t.Errorf("Expected EventName release, got %s", ic.EventName)
 	}
 }
-func TestIsValidRegex(t *testing.T) {
+
+func TestValidatePatterns(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name    string
-		pattern string
-		want    bool
-		wantErr bool
+		name      string
+		patterns  []string
+		wantPanic bool
 	}{
 		{
-			name:    "Valid simple regex",
-			pattern: "^[a-z]+$",
-			want:    true,
-			wantErr: false,
+			name:      "Valid patterns",
+			patterns:  []string{"*.txt", "file?.log", "[a-z]*.go"},
+			wantPanic: false,
 		},
 		{
-			name:    "Valid simple regex",
-			pattern: "live/prod/*",
-			want:    true,
-			wantErr: false,
+			name:      "Empty patterns",
+			patterns:  []string{},
+			wantPanic: false,
 		},
 		{
-			name:    "Valid complex regex",
-			pattern: "^(https?:\\/\\/)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([\\/\\w \\.-]*)*\\/?$",
-			want:    true,
-			wantErr: false,
+			name:      "Single invalid pattern",
+			patterns:  []string{"[invalid"},
+			wantPanic: true,
 		},
 		{
-			name:    "Invalid regex - unmatched parenthesis",
-			pattern: "([a-z]+",
-			want:    false,
-			wantErr: true,
+			name:      "Mix of valid and invalid patterns",
+			patterns:  []string{"*.txt", "[invalid", "file?.log"},
+			wantPanic: true,
 		},
 		{
-			name:    "Empty string",
-			pattern: "",
-			want:    true,
-			wantErr: false,
+			name:      "Complex valid patterns",
+			patterns:  []string{"**/*.{js,ts,jsx,tsx}", "src/[a-z]*/**.go"},
+			wantPanic: false,
 		},
 		{
-			name:    "Invalid regex - unescaped special character",
-			pattern: "a+*",
-			want:    false,
-			wantErr: true,
+			name:      "Patterns with escaped characters",
+			patterns:  []string{"file\\*.txt", "log\\?.dat"},
+			wantPanic: false,
 		},
 		{
-			name:    "Invalid regex",
-			pattern: "*.txt",
-			want:    false,
-			wantErr: true,
+			name:      "character range",
+			patterns:  []string{"[a-z]*.txt"},
+			wantPanic: false,
 		},
 		{
-			name:    "Valid regex with quantifiers",
-			pattern: "a{2,4}",
-			want:    true,
-			wantErr: false,
+			name:      "Valid patterns with whitespace",
+			patterns:  []string{"  *.txt  ", "  file?.log  "},
+			wantPanic: false,
 		},
 		{
-			name:    "Valid regex with character classes",
-			pattern: "[0-9a-fA-F]{6}",
-			want:    true,
-			wantErr: false,
-		},
-		{
-			name:    "Invalid regex with lookahead",
-			pattern: "(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)[A-Za-z\\d]{8,}",
-			want:    false,
-			wantErr: true,
-		},
-		{
-			name:    "Invalid regex - unmatched square bracket",
-			pattern: "[a-z",
-			want:    false,
-			wantErr: true,
-		},
-		{
-			name:    "Valid regex with escaped special characters",
-			pattern: "\\[.*\\]",
-			want:    true,
-			wantErr: false,
+			name:      "Valid patterns with subdirectories",
+			patterns:  []string{"live/prod/*", "live/local/*"},
+			wantPanic: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := isValidRegex(tt.pattern)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("isValidRegex() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantPanic {
+				assert.Panics(t, func() { validatePatterns(tt.patterns) })
+			} else {
+				assert.NotPanics(t, func() { validatePatterns(tt.patterns) })
 			}
-			if got != tt.want {
-				t.Errorf("isValidRegex() = %v, want %v", got, tt.want)
+		})
+	}
+}
+func TestMain(m *testing.M) {
+	// Save current environment
+	oldEnv := os.Environ()
+
+	// Run tests
+	code := m.Run()
+
+	// Restore environment
+	for _, envVar := range oldEnv {
+		pair := strings.SplitN(envVar, "=", 2)
+		os.Setenv(pair[0], pair[1])
+	}
+
+	os.Exit(code)
+}
+
+func TestInputConfigValidate(t *testing.T) {
+	os.Setenv("INPUT_ENVIRONMENT", "production")
+	tests := []struct {
+		name        string
+		inputConfig InputConfig
+		wantPanic   bool
+	}{
+		{
+			name: "Valid config with environment and github token",
+			inputConfig: InputConfig{
+				Environment: "production",
+				GithubToken: "ghp_validtoken",
+				Repo:        "test/repo",
+				Sha:         "abc123",
+			},
+			wantPanic: false,
+		},
+		{
+			name: "Invalid config with environment but no github token",
+			inputConfig: InputConfig{
+				Environment: "staging",
+				GithubToken: "",
+				Repo:        "test/repo",
+				Sha:         "def456",
+			},
+			wantPanic: true,
+		},
+		{
+			name: "Valid config with online mode and github token",
+			inputConfig: InputConfig{
+				online:      "true",
+				GithubToken: "ghp_validtoken",
+				Repo:        "test/repo",
+				Sha:         "ghi789",
+			},
+			wantPanic: false,
+		},
+		{
+			name: "Invalid config with online mode but no github token",
+			inputConfig: InputConfig{
+				online:      "true",
+				GithubToken: "",
+				Repo:        "test/repo",
+				Sha:         "jkl012",
+			},
+			wantPanic: true,
+		},
+		{
+			name: "Valid config with offline mode",
+			inputConfig: InputConfig{
+				online: "false",
+				Repo:   "test/repo",
+				Sha:    "mno345",
+			},
+			wantPanic: false,
+		},
+		{
+			name: "Invalid config with empty repo",
+			inputConfig: InputConfig{
+				Repo: "",
+				Sha:  "pqr678",
+			},
+			wantPanic: true,
+		},
+		{
+			name: "Invalid config with empty sha",
+			inputConfig: InputConfig{
+				Repo: "test/repo",
+				Sha:  "",
+			},
+			wantPanic: true,
+		},
+		{
+			name: "Valid config with includes and excludes patterns",
+			inputConfig: InputConfig{
+				Repo:             "test/repo",
+				Sha:              "stu901",
+				IncludesPatterns: []string{"*.go", "*.js"},
+				ExcludesPatterns: []string{"vendor/*", "node_modules/*"},
+			},
+			wantPanic: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantPanic {
+				assert.Panics(t, func() { tt.inputConfig.Validate() })
+			} else {
+				assert.NotPanics(t, func() { tt.inputConfig.Validate() })
 			}
+
 		})
 	}
 }
