@@ -12,7 +12,6 @@ func TestGetInputConfig(t *testing.T) {
 	os.Setenv("INPUT_COMMIT", "abc123")
 	os.Setenv("INPUT_INCLUDES", "file1.txt\nfile2.txt")
 	os.Setenv("INPUT_EXCLUDES", "ignore1.txt\nignore2.txt")
-	os.Setenv("INPUT_DELTA_OUTPUT_PATH_DEPTH", "2")
 	os.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
 	os.Setenv("INPUT_BRANCH", "main")
 
@@ -29,22 +28,21 @@ func TestGetInputConfig(t *testing.T) {
 
 	// Check the results
 	expectedIC := InputConfig{
-		Environment:          "test",
-		Commit:               "abc123",
-		Includes:             "file1.txt\nfile2.txt",
-		Excludes:             "ignore1.txt\nignore2.txt",
-		DeltaOutputPathDepth: "2",
-		GithubToken:          "ghp_testtoken",
-		IncludesPatterns:     []string{"file1.txt", "file2.txt"},
-		ExcludesPatterns:     []string{"ignore1.txt", "ignore2.txt"},
-		Sha:                  "def456",
-		Ref:                  "refs/heads/main",
-		ApiUrl:               "https://api.github.com",
-		Workflow:             "test-workflow",
-		EventName:            "push",
-		Job:                  "build",
-		Repo:                 "test/test",
-		Branch:               "main",
+		Environment:      "test",
+		Commit:           "abc123",
+		Includes:         "file1.txt\nfile2.txt",
+		Excludes:         "ignore1.txt\nignore2.txt",
+		GithubToken:      "ghp_testtoken",
+		IncludesPatterns: []string{"file1.txt", "file2.txt"},
+		ExcludesPatterns: []string{"ignore1.txt", "ignore2.txt"},
+		Sha:              "def456",
+		Ref:              "refs/heads/main",
+		ApiUrl:           "https://api.github.com",
+		Workflow:         "test-workflow",
+		EventName:        "push",
+		Job:              "build",
+		Repo:             "test/test",
+		Branch:           "main",
 	}
 
 	if !reflect.DeepEqual(ic, expectedIC) {
@@ -56,7 +54,7 @@ func TestGetDiffBetweenCommits(t *testing.T) {
 	sha1 := "c6023e778dac2c67e7ec0c42889e349a76414294"
 	sha2 := "839bc7c55038951cfd3fed884617fd80d02ddbd5"
 
-	result, err := GetDiffBetweenCommits("../", sha1, sha2)
+	result, err := GetDiffBetweenCommits("../../", sha1, sha2)
 	if err != nil {
 		t.Fatalf("Error getting diff between commits: %v", err)
 	}
@@ -156,7 +154,6 @@ func TestMain(m *testing.M) {
 	os.Unsetenv("INPUT_COMMIT")
 	os.Unsetenv("INPUT_INCLUDES")
 	os.Unsetenv("INPUT_EXCLUDES")
-	os.Unsetenv("INPUT_DELTA_OUTPUT_PATH_DEPTH")
 	os.Unsetenv("INPUT_GITHUB_TOKEN")
 	os.Unsetenv("INPUT_BRANCH")
 	os.Unsetenv("GITHUB_SHA")

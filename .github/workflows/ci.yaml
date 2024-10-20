@@ -55,7 +55,7 @@ jobs:
             internal/*
             .github/*
           excludes: |
-            *.zip
+            .*\\.zip
             internal/.*test.go
 
       - name: Print Delta Output

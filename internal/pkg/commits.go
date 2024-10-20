@@ -141,15 +141,6 @@ func FilterStrings(input []string, includePatterns, excludePatterns []string) []
 	return result
 }
 
-// isValidRegex checks if the provided string is a valid regular expression.
-func isValidRegex(pattern string) (bool, error) {
-	_, err := regexp.Compile(pattern)
-	if err != nil {
-		return false, err // Return false and the error
-	}
-	return true, nil // Return true if no error
-}
-
 // SetGitHubOutput sets a GitHub Actions output variable.
 func SetGitHubOutput(name, value string) {
 	// Get the GITHUB_OUTPUT environment variable
@@ -179,6 +170,7 @@ func SetGitHubOutput(name, value string) {
 // list of the changed files. If there are no changes, the "is_detected" output is set to "false".
 func Delta(repoPath string) {
 	cfg := GetInputConfig()
+	cfg.Validate()
 	client := GetClient(&cfg)
 
 	var baseSha string

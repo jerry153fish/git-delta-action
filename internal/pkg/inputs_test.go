@@ -10,7 +10,6 @@ func TestGetInputConfigWithEmptyEnvironment(t *testing.T) {
 	os.Setenv("INPUT_COMMIT", "abc123")
 	os.Setenv("INPUT_INCLUDES", "file1.txt")
 	os.Setenv("INPUT_EXCLUDES", "ignore1.txt")
-	os.Setenv("INPUT_DELTA_OUTPUT_PATH_DEPTH", "1")
 	os.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
 	os.Setenv("INPUT_BRANCH", "develop")
 
@@ -43,7 +42,6 @@ func TestGetInputConfigWithMultipleIncludesAndExcludes(t *testing.T) {
 	os.Setenv("INPUT_COMMIT", "")
 	os.Setenv("INPUT_INCLUDES", "file1.txt\nfile2.go\nfile3.js")
 	os.Setenv("INPUT_EXCLUDES", "ignore1.txt\nignore2.log\nignore3.tmp")
-	os.Setenv("INPUT_DELTA_OUTPUT_PATH_DEPTH", "3")
 	os.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
 	os.Setenv("INPUT_BRANCH", "")
 
@@ -66,9 +64,6 @@ func TestGetInputConfigWithMultipleIncludesAndExcludes(t *testing.T) {
 	if len(ic.ExcludesPatterns) != 3 {
 		t.Errorf("Expected 3 ExcludesPatterns, got %d", len(ic.ExcludesPatterns))
 	}
-	if ic.DeltaOutputPathDepth != "3" {
-		t.Errorf("Expected DeltaOutputPathDepth 3, got %s", ic.DeltaOutputPathDepth)
-	}
 	if ic.Sha != "abc789" {
 		t.Errorf("Expected Sha abc789, got %s", ic.Sha)
 	}
@@ -82,7 +77,6 @@ func TestGetInputConfigWithEmptyOptionalFields(t *testing.T) {
 	os.Setenv("INPUT_COMMIT", "")
 	os.Setenv("INPUT_INCLUDES", "")
 	os.Setenv("INPUT_EXCLUDES", "")
-	os.Setenv("INPUT_DELTA_OUTPUT_PATH_DEPTH", "")
 	os.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
 	os.Setenv("INPUT_BRANCH", "")
 
@@ -108,13 +102,105 @@ func TestGetInputConfigWithEmptyOptionalFields(t *testing.T) {
 	if len(ic.ExcludesPatterns) != 0 {
 		t.Errorf("Expected 0 ExcludesPatterns, got %d", len(ic.ExcludesPatterns))
 	}
-	if ic.DeltaOutputPathDepth != "" {
-		t.Errorf("Expected empty DeltaOutputPathDepth, got %s", ic.DeltaOutputPathDepth)
-	}
 	if ic.Ref != "refs/tags/v1.0.0" {
 		t.Errorf("Expected Ref refs/tags/v1.0.0, got %s", ic.Ref)
 	}
 	if ic.EventName != "release" {
 		t.Errorf("Expected EventName release, got %s", ic.EventName)
+	}
+}
+func TestIsValidRegex(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		pattern string
+		want    bool
+		wantErr bool
+	}{
+		{
+			name:    "Valid simple regex",
+			pattern: "^[a-z]+$",
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name:    "Valid simple regex",
+			pattern: "live/prod/*",
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name:    "Valid complex regex",
+			pattern: "^(https?:\\/\\/)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([\\/\\w \\.-]*)*\\/?$",
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name:    "Invalid regex - unmatched parenthesis",
+			pattern: "([a-z]+",
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "Empty string",
+			pattern: "",
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name:    "Invalid regex - unescaped special character",
+			pattern: "a+*",
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "Invalid regex",
+			pattern: "*.txt",
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "Valid regex with quantifiers",
+			pattern: "a{2,4}",
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name:    "Valid regex with character classes",
+			pattern: "[0-9a-fA-F]{6}",
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name:    "Invalid regex with lookahead",
+			pattern: "(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)[A-Za-z\\d]{8,}",
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "Invalid regex - unmatched square bracket",
+			pattern: "[a-z",
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name:    "Valid regex with escaped special characters",
+			pattern: "\\[.*\\]",
+			want:    true,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := isValidRegex(tt.pattern)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("isValidRegex() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("isValidRegex() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
