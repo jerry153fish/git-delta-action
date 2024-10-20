@@ -32,9 +32,9 @@ inputs:
           */**/README.md
     required: false
     default: ""
-  offline:
+  online:
     description: |
-      "If true, git delta will be run offline, otherwise it will be run online against github api"
+      "If true, git delta will be run online against the GitHub API, otherwise it will be run offline"
     required: false
     default: true
 outputs:

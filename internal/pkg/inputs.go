@@ -28,7 +28,7 @@ type InputConfig struct {
 	Job              string `env:"GITHUB_JOB"`
 	Repo             string `env:"GITHUB_REPOSITORY"`
 	Branch           string `env:"INPUT_BRANCH"`
-	Offline          string `env:"INPUT_OFFLINE"`
+	online           string `env:"INPUT_ONLINE"`
 	IncludesPatterns []string
 	ExcludesPatterns []string
 }
@@ -58,6 +58,14 @@ func GetInputConfig() InputConfig {
 func (c *InputConfig) Validate() {
 	if c.Environment != "" && c.GithubToken == "" {
 		log.Fatal("github_token must be specific when the environment is given")
+	}
+
+	if c.online == "true" {
+		if c.GithubToken == "" {
+			log.Fatal("github_token must be specific when online is set to true")
+		}
+	} else {
+		log.Println("Warning: Offline mode might need the entire git history. Ensure the git clone depth is set to 0.")
 	}
 
 	if c.Repo == "" {
