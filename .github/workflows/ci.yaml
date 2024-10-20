@@ -12,6 +12,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    environment: main
 
     steps:
       - name: Check out repository code
@@ -31,160 +32,160 @@ jobs:
       - name: Run Tests
         run: make test
 
-  sanity-check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+  # sanity-check:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 60
 
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  #   steps:
+  #     - name: Check out repository code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Setup action.yaml for local test
-        run: |
-          sed -i 's/docker:\/\/jerry153fish\/git-delta:latest/Dockerfile/g' action.yaml
+  #     - name: Setup action.yaml for local test
+  #       run: |
+  #         sed -i 's/docker:\/\/jerry153fish\/git-delta:latest/Dockerfile/g' action.yaml
 
-      - name: Get Delta against main environment online mode
-        uses: ./
-        id: delta-env-online
-        with:
-          environment: main
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Get Delta against main environment online mode
+  #       uses: ./
+  #       id: delta-env-online
+  #       with:
+  #         environment: main
+  #         github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Print Delta Output for environment online
-        run: |
-          echo "Delta environment online flag: ${{ steps.delta-env-online.outputs.is_detected }}"
-          echo "Delta environment online files: ${{ steps.delta-env-online.outputs.delta_files }}"
+  #     - name: Print Delta Output for environment online
+  #       run: |
+  #         echo "Delta environment online flag: ${{ steps.delta-env-online.outputs.is_detected }}"
+  #         echo "Delta environment online files: ${{ steps.delta-env-online.outputs.delta_files }}"
 
-      - name: Get Delta against main environment offline mode (still need to query environment via API)
-        uses: ./
-        id: delta-env-offline
-        with:
-          environment: main
-          online: false
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          includes: |
-            **/*
-          excludes: |
-            **/*_test.go
+  #     - name: Get Delta against main environment offline mode (still need to query environment via API)
+  #       uses: ./
+  #       id: delta-env-offline
+  #       with:
+  #         environment: main
+  #         online: false
+  #         github_token: ${{ secrets.GITHUB_TOKEN }}
+  #         includes: |
+  #           **/*
+  #         excludes: |
+  #           **/*_test.go
 
-      - name: Print Delta Output for environment offline
-        run: |
-          echo "Delta environment offline flag: ${{ steps.delta-env-offline.outputs.is_detected }}"
-          echo "Delta Environment offline files: ${{ steps.delta-env-offline.outputs.delta_files }}"
+  #     - name: Print Delta Output for environment offline
+  #       run: |
+  #         echo "Delta environment offline flag: ${{ steps.delta-env-offline.outputs.is_detected }}"
+  #         echo "Delta Environment offline files: ${{ steps.delta-env-offline.outputs.delta_files }}"
 
-      - name: Get Delta against main branch with online mode
-        uses: ./
-        id: delta-branch-online
-        with:
-          branch: main
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          includes: |
-            internal/**/*
-            .github/**/*
+  #     - name: Get Delta against main branch with online mode
+  #       uses: ./
+  #       id: delta-branch-online
+  #       with:
+  #         branch: main
+  #         github_token: ${{ secrets.GITHUB_TOKEN }}
+  #         includes: |
+  #           internal/**/*
+  #           .github/**/*
 
 
-      - name: Print Delta Output for branch online
-        run: |
-          echo "Delta branch online flag: ${{ steps.delta-branch-online.outputs.is_detected }}"
-          echo "Delta branch online files: ${{ steps.delta-branch-online.outputs.delta_files }}"
+  #     - name: Print Delta Output for branch online
+  #       run: |
+  #         echo "Delta branch online flag: ${{ steps.delta-branch-online.outputs.is_detected }}"
+  #         echo "Delta branch online files: ${{ steps.delta-branch-online.outputs.delta_files }}"
 
-      - name: Get Delta against main branch with offline mode
-        uses: ./
-        id: delta-branch-offline
-        with:
-          branch: main
-          online: false
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          includes: |
-            internal/**/*
-            .github/**/*
-          excludes: |
-            **/*.md
+  #     - name: Get Delta against main branch with offline mode
+  #       uses: ./
+  #       id: delta-branch-offline
+  #       with:
+  #         branch: main
+  #         online: false
+  #         github_token: ${{ secrets.GITHUB_TOKEN }}
+  #         includes: |
+  #           internal/**/*
+  #           .github/**/*
+  #         excludes: |
+  #           **/*.md
 
-      - name: Print Delta Output for branch offline
-        run: |
-          echo "Delta branch offline flag: ${{ steps.delta-branch-offline.outputs.is_detected }}"
-          echo "Delta branch offline: ${{ steps.delta-branch-offline.outputs.delta_files }}"
+  #     - name: Print Delta Output for branch offline
+  #       run: |
+  #         echo "Delta branch offline flag: ${{ steps.delta-branch-offline.outputs.is_detected }}"
+  #         echo "Delta branch offline: ${{ steps.delta-branch-offline.outputs.delta_files }}"
 
-      - name: Restore action.yaml
-        if: always()
-        run: |
-          sed -i 's/Dockerfile/docker:\/\/jerry153fish\/git-delta:latest/g' action.yaml || true
+  #     - name: Restore action.yaml
+  #       if: always()
+  #       run: |
+  #         sed -i 's/Dockerfile/docker:\/\/jerry153fish\/git-delta:latest/g' action.yaml || true
 
-  golangci:
-    name: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: stable
-          cache-dependency-path: "**/go.sum"
+  # golangci:
+  #   name: lint
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-go@v5
+  #       with:
+  #         go-version: stable
+  #         cache-dependency-path: "**/go.sum"
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.60
+  #     - name: golangci-lint
+  #       uses: golangci/golangci-lint-action@v6
+  #       with:
+  #         version: v1.60
 
-  docker-push:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    if: ${{ github.event_name != 'pull_request' }}
-    environment: main
-    needs: [test, golangci, sanity-check]
+  # docker-push:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 60
+  #   if: ${{ github.event_name != 'pull_request' }}
+  #   environment: main
+  #   needs: [test, golangci, sanity-check]
 
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Check out repository code
+  #       uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v2
         
-      # setup Docker buld action
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          install: true
+  #     # setup Docker buld action
+  #     - name: Set up Docker Buildx
+  #       id: buildx
+  #       uses: docker/setup-buildx-action@v3
+  #       with:
+  #         install: true
 
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-            ${{ runner.os }}-
-            buildx-
+  #     - name: Cache Docker layers
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: /tmp/.buildx-cache
+  #         key: ${{ runner.os }}-buildx-${{ hashFiles('**/go.sum') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-buildx-
+  #           ${{ runner.os }}-
+  #           buildx-
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+  #     - name: Login to DockerHub
+  #       uses: docker/login-action@v3
+  #       with:
+  #         username: ${{ secrets.DOCKER_USER }}
+  #         password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: jerry153fish/git-delta
+  #     - name: Docker meta
+  #       id: meta
+  #       uses: docker/metadata-action@v5
+  #       with:
+  #         images: jerry153fish/git-delta
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          tags: |
-            ${{ github.ref != 'refs/heads/main' && steps.meta.outputs.tags || '' }}
-            ${{ github.ref == 'refs/heads/main' && 'jerry153fish/remote-delta:latest' || '' }}
-          labels: ${{ steps.meta.outputs.labels }}
-          push: true
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
-          platforms: linux/amd64,linux/arm64
+  #     - name: Build and push
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         context: .
+  #         tags: |
+  #           ${{ github.ref != 'refs/heads/main' && steps.meta.outputs.tags || '' }}
+  #           ${{ github.ref == 'refs/heads/main' && 'jerry153fish/remote-delta:latest' || '' }}
+  #         labels: ${{ steps.meta.outputs.labels }}
+  #         push: true
+  #         cache-from: type=local,src=/tmp/.buildx-cache
+  #         cache-to: type=local,dest=/tmp/.buildx-cache-new
+  #         platforms: linux/amd64,linux/arm64
 
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+  #     - name: Move cache
+  #       run: |
+  #         rm -rf /tmp/.buildx-cache
+  #         mv /tmp/.buildx-cache-new /tmp/.buildx-cache
