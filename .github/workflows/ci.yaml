@@ -43,7 +43,7 @@ jobs:
 
       - name: Setup action.yaml for local test
         run: |
-          sed -i 's/docker:\/\/jerry153fish\/git-delta:latest/Dockerfile/g' action.yaml
+          sed -i "s/docker:\/\/jerry153fish\/git-delta:$(cat version.txt)/Dockerfile/g" action.yaml
 
       - name: Get Delta against main environment online mode
         uses: ./
@@ -111,7 +111,7 @@ jobs:
       - name: Restore action.yaml
         if: always()
         run: |
-          sed -i 's/Dockerfile/docker:\/\/jerry153fish\/git-delta:latest/g' action.yaml || true
+          sed -i "s/Dockerfile/docker:\/\/jerry153fish\/git-delta:$(cat version.txt)/g" action.yaml || true
 
   golangci:
     name: lint
