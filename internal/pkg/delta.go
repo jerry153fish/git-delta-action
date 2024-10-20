@@ -40,7 +40,9 @@ func FilterStrings(input []string, includePatterns, excludePatterns []string) []
 		if matchPatterns(str, true, includePatterns) {
 			// If it matches an include pattern, check that it doesn't match any exclude pattern
 			if !matchPatterns(str, false, excludePatterns) {
-				result = append(result, str)
+				if str != "" {
+					result = append(result, str)
+				}
 			}
 		}
 	}

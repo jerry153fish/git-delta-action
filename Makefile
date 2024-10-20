@@ -65,3 +65,6 @@ act-sanity: ## Run test in act
 
 act-docker: ## Run docker build and push in act
 	@act --secret-file .secrets -j docker-push
+
+.PHONY: all
+all: build fmt vet act-test act-sanity

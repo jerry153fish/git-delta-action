@@ -89,20 +89,56 @@ To contribute to this project or make modifications:
 3. Test your changes thoroughly.
 4. Create a pull request with a clear description of your modifications.
 
+### Prerequisites
 For local development and testing:
 
-1. Ensure you have Docker installed on your machine.
-2. Build the Docker image locally:
-   
-   docker build -t git-delta-action .
-   
-3. Run the action locally using Docker:
-   
-   docker run --rm -e INPUT_GITHUB_TOKEN -e INPUT_BRANCH -e INPUT_INCLUDES -e INPUT_EXCLUDES -e INPUT_ONLINE git-delta-action
-   
-4. Adjust the environment variables as needed for your test cases.
+1. Ensure you have [Docker](https://www.docker.com/) and [act](https://github.com/nektos/act) installed on your machine.
+2. Create a `.secrets` file in the root directory of the project with the following content:
 
-Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for more detailed information on our development process and guidelines.
+
+```
+GITHUB_TOKEN=your_github_token
+
+# Optional: only i you want to push the docker image
+DOCKER_USER=your_docker_username
+DOCKER_TOKEN=your_docker_password
+```
+
+### Useful commands
+
+1. Run the following commands for help
+   
+```
+make help
+```
+
+2. Install dependencies
+
+```
+make install
+```
+
+3. Lint
+   
+```
+make fmt 
+make lint
+```
+   
+4. Tests
+
+```
+make test # Unit tests
+make vet # Vet checks
+make act-test # Runs `test` stage in the workflow of `.github/workflows/ci.yaml`
+make act-sanity # Runs `sanity-check` stage in then workflow of `.github/workflows/ci.yaml`
+```
+
+5. Build docker build
+
+```
+make act-docker # Run the whole workflow of `.github/workflows/ci.yaml`
+```
 
 ## License
 
