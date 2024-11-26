@@ -6,7 +6,7 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.7.1
 	github.com/caarlos0/env/v11 v11.2.2
 	github.com/go-git/go-git/v5 v5.12.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 )
 
 require (
