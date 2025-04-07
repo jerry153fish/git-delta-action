@@ -74,7 +74,7 @@ In this example, the Git Delta action compares the current branch against the `m
 
 This action runs inside a Docker container. The latest version of the image used is:
 
-docker://jerry153fish/git-delta:latest
+docker://ghcr.io/jerry153fish/git-delta:latest
 
 ## Development
 

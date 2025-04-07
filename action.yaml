@@ -44,4 +44,4 @@ outputs:
     description: "Bool to show if delta has been detected"
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/jerry153fish/git-delta:v0.0.2'
+  image: 'docker://ghcr.io/jerry153fish/git-delta-action:v0.0.2'

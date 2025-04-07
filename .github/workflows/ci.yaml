@@ -170,7 +170,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/jerry153fish/git-delta
+          images: ghcr.io/jerry153fish/git-delta-action
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -178,7 +178,7 @@ jobs:
           context: .
           tags: |
             ${{ github.ref != 'refs/heads/main' && steps.meta.outputs.tags || '' }}
-            ${{ github.ref == 'refs/heads/main' && 'ghcr.io/jerry153fish/remote-delta:latest' || '' }}
+            ${{ github.ref == 'refs/heads/main' && 'ghcr.io/jerry153fish/git-delta-action:latest' || '' }}
           labels: ${{ steps.meta.outputs.labels }}
           push: true
           cache-from: type=local,src=/tmp/.buildx-cache
