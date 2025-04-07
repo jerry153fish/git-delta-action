@@ -16,6 +16,10 @@ RUN go build -o git-delta .
 
 FROM gcr.io/distroless/static-debian12
 
+LABEL org.opencontainers.image.source=github.com/jerry153fish/git-delta-action
+LABEL org.opencontainers.image.description="Git Dleta Action Docker Image"
+LABEL org.opencontainers.image.licenses=MIT
+
 # Copy the Go binary from the builder stage
 COPY --from=builder /app/git-delta /usr/local/bin/git-delta
 
