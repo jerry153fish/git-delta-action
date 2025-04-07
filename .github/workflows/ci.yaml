@@ -43,7 +43,7 @@ jobs:
 
       - name: Setup action.yaml for local test
         run: |
-          sed -i "s/docker:\/\/jerry153fish\/git-delta:$(cat version.txt)/Dockerfile/g" action.yaml
+          sed -i "s/docker:\/\/ghcr.io\/jerry153fish\/git-delta:$(cat version.txt)/Dockerfile/g" action.yaml
 
       - name: Get Delta against main environment online mode
         uses: ./
