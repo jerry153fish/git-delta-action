@@ -56,7 +56,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run Git Delta
-        uses: jerry153fish/git-delta-action@v0.0.1
+        uses: jerry153fish/git-delta-action@v0.0.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: 'main'
