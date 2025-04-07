@@ -162,14 +162,15 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: jerry153fish/git-delta
+          images: ghcr.io/jerry153fish/git-delta
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -177,7 +178,7 @@ jobs:
           context: .
           tags: |
             ${{ github.ref != 'refs/heads/main' && steps.meta.outputs.tags || '' }}
-            ${{ github.ref == 'refs/heads/main' && 'jerry153fish/remote-delta:latest' || '' }}
+            ${{ github.ref == 'refs/heads/main' && 'ghcr.io/jerry153fish/remote-delta:latest' || '' }}
           labels: ${{ steps.meta.outputs.labels }}
           push: true
           cache-from: type=local,src=/tmp/.buildx-cache
