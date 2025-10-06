@@ -5,7 +5,7 @@ go 1.23.2
 require (
 	github.com/bmatcuk/doublestar/v4 v4.9.1
 	github.com/caarlos0/env/v11 v11.3.1
-	github.com/go-git/go-git/v5 v5.16.2
+	github.com/go-git/go-git/v5 v5.16.3
 	github.com/stretchr/testify v1.11.1
 )
 
