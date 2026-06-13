@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/go-github/v66/github"
+	"github.com/google/go-github/v75/github"
 )
 
 const (
@@ -52,18 +52,25 @@ func setup(t *testing.T) (client *github.Client, mux *http.ServeMux, serverURL s
 	return client, mux, server.URL
 }
 
+func writeResponse(t *testing.T, w http.ResponseWriter, body string) {
+	t.Helper()
+	if _, err := fmt.Fprint(w, body); err != nil {
+		t.Errorf("write response: %v", err)
+	}
+}
+
 func TestGetLatestSuccessfulDeploymentSha(t *testing.T) {
 	t.Parallel()
 	client, mux, _ := setup(t)
 
 	// Mock the ListDeployments endpoint
 	mux.HandleFunc("/repos/owner/repo/deployments", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `[{"id": 1, "sha": "abc123"}]`)
+		writeResponse(t, w, `[{"id": 1, "sha": "abc123"}]`)
 	})
 
 	// Mock the ListDeploymentStatuses endpoint
 	mux.HandleFunc("/repos/owner/repo/deployments/1/statuses", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `[{"state": "success"}]`)
+		writeResponse(t, w, `[{"state": "success"}]`)
 	})
 
 	// Create a test InputConfig
@@ -91,7 +98,7 @@ func TestGetGitHubBranchLatestSHA(t *testing.T) {
 
 	// Mock the ListDeployments endpoint
 	mux.HandleFunc("/repos/owner/repo/git/ref/heads/main", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `
+		writeResponse(t, w, `
 		{
 			"ref": "refs/heads/b",
 			"url": "https://api.github.com/repos/o/r/git/refs/heads/b",
@@ -165,7 +172,7 @@ func TestCompareGithubSHAs(t *testing.T) {
 				if tc.expectedError {
 					w.WriteHeader(http.StatusNotFound)
 				}
-				fmt.Fprint(w, tc.mockResponse)
+				writeResponse(t, w, tc.mockResponse)
 			})
 
 			cfg := &InputConfig{

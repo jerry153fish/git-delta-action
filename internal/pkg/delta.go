@@ -65,10 +65,14 @@ func SetGitHubOutput(name, value string) {
 		log.Printf("failed to open output file: %v", err)
 		return
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("failed to close output file: %v", err)
+		}
+	}()
 
 	// Format the output and write it to the file
-	if _, err := f.WriteString(fmt.Sprintf("%s=%s\n", name, value)); err != nil {
+	if _, err := fmt.Fprintf(f, "%s=%s\n", name, value); err != nil {
 		log.Printf("failed to write output: %v", err)
 	}
 }
