@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/go-github/v66/github"
+	"github.com/google/go-github/v75/github"
 )
 
 const (

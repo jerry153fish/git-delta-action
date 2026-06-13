@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/google/go-github/v66/github"
+	"github.com/google/go-github/v75/github"
 )
 
 // GetLatestSuccessfulDeploymentSha retrieves the Sha of latest successful deployment for a given environment
