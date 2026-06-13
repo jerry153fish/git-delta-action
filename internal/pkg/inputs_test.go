@@ -9,20 +9,20 @@ import (
 )
 
 func TestGetInputConfigWithEmptyEnvironment(t *testing.T) {
-	os.Setenv("INPUT_ENVIRONMENT", "")
-	os.Setenv("INPUT_COMMIT", "abc123")
-	os.Setenv("INPUT_INCLUDES", "file1.txt")
-	os.Setenv("INPUT_EXCLUDES", "ignore1.txt")
-	os.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
-	os.Setenv("INPUT_BRANCH", "develop")
+	t.Setenv("INPUT_ENVIRONMENT", "")
+	t.Setenv("INPUT_COMMIT", "abc123")
+	t.Setenv("INPUT_INCLUDES", "file1.txt")
+	t.Setenv("INPUT_EXCLUDES", "ignore1.txt")
+	t.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
+	t.Setenv("INPUT_BRANCH", "develop")
 
-	os.Setenv("GITHUB_SHA", "def456")
-	os.Setenv("GITHUB_REF", "refs/heads/develop")
-	os.Setenv("GITHUB_API_URL", "https://api.github.com")
-	os.Setenv("GITHUB_WORKFLOW", "test-workflow")
-	os.Setenv("GITHUB_EVENT_NAME", "pull_request")
-	os.Setenv("GITHUB_JOB", "test")
-	os.Setenv("GITHUB_REPOSITORY", "test/repo")
+	t.Setenv("GITHUB_SHA", "def456")
+	t.Setenv("GITHUB_REF", "refs/heads/develop")
+	t.Setenv("GITHUB_API_URL", "https://api.github.com")
+	t.Setenv("GITHUB_WORKFLOW", "test-workflow")
+	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
+	t.Setenv("GITHUB_JOB", "test")
+	t.Setenv("GITHUB_REPOSITORY", "test/repo")
 
 	ic := GetInputConfig()
 
@@ -41,20 +41,20 @@ func TestGetInputConfigWithEmptyEnvironment(t *testing.T) {
 }
 
 func TestGetInputConfigWithMultipleIncludesAndExcludes(t *testing.T) {
-	os.Setenv("INPUT_ENVIRONMENT", "staging")
-	os.Setenv("INPUT_COMMIT", "")
-	os.Setenv("INPUT_INCLUDES", "file1.txt\nfile2.go\nfile3.js")
-	os.Setenv("INPUT_EXCLUDES", "ignore1.txt\nignore2.log\nignore3.tmp")
-	os.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
-	os.Setenv("INPUT_BRANCH", "")
+	t.Setenv("INPUT_ENVIRONMENT", "staging")
+	t.Setenv("INPUT_COMMIT", "")
+	t.Setenv("INPUT_INCLUDES", "file1.txt\nfile2.go\nfile3.js")
+	t.Setenv("INPUT_EXCLUDES", "ignore1.txt\nignore2.log\nignore3.tmp")
+	t.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
+	t.Setenv("INPUT_BRANCH", "")
 
-	os.Setenv("GITHUB_SHA", "abc789")
-	os.Setenv("GITHUB_REF", "refs/heads/feature/new-feature")
-	os.Setenv("GITHUB_API_URL", "https://api.github.com")
-	os.Setenv("GITHUB_WORKFLOW", "feature-workflow")
-	os.Setenv("GITHUB_EVENT_NAME", "push")
-	os.Setenv("GITHUB_JOB", "build")
-	os.Setenv("GITHUB_REPOSITORY", "org/repo")
+	t.Setenv("GITHUB_SHA", "abc789")
+	t.Setenv("GITHUB_REF", "refs/heads/feature/new-feature")
+	t.Setenv("GITHUB_API_URL", "https://api.github.com")
+	t.Setenv("GITHUB_WORKFLOW", "feature-workflow")
+	t.Setenv("GITHUB_EVENT_NAME", "push")
+	t.Setenv("GITHUB_JOB", "build")
+	t.Setenv("GITHUB_REPOSITORY", "org/repo")
 
 	ic := GetInputConfig()
 
@@ -76,20 +76,20 @@ func TestGetInputConfigWithMultipleIncludesAndExcludes(t *testing.T) {
 }
 
 func TestGetInputConfigWithEmptyOptionalFields(t *testing.T) {
-	os.Setenv("INPUT_ENVIRONMENT", "production")
-	os.Setenv("INPUT_COMMIT", "")
-	os.Setenv("INPUT_INCLUDES", "")
-	os.Setenv("INPUT_EXCLUDES", "")
-	os.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
-	os.Setenv("INPUT_BRANCH", "")
+	t.Setenv("INPUT_ENVIRONMENT", "production")
+	t.Setenv("INPUT_COMMIT", "")
+	t.Setenv("INPUT_INCLUDES", "")
+	t.Setenv("INPUT_EXCLUDES", "")
+	t.Setenv("INPUT_GITHUB_TOKEN", "ghp_testtoken")
+	t.Setenv("INPUT_BRANCH", "")
 
-	os.Setenv("GITHUB_SHA", "xyz123")
-	os.Setenv("GITHUB_REF", "refs/tags/v1.0.0")
-	os.Setenv("GITHUB_API_URL", "https://api.github.com")
-	os.Setenv("GITHUB_WORKFLOW", "release-workflow")
-	os.Setenv("GITHUB_EVENT_NAME", "release")
-	os.Setenv("GITHUB_JOB", "deploy")
-	os.Setenv("GITHUB_REPOSITORY", "company/project")
+	t.Setenv("GITHUB_SHA", "xyz123")
+	t.Setenv("GITHUB_REF", "refs/tags/v1.0.0")
+	t.Setenv("GITHUB_API_URL", "https://api.github.com")
+	t.Setenv("GITHUB_WORKFLOW", "release-workflow")
+	t.Setenv("GITHUB_EVENT_NAME", "release")
+	t.Setenv("GITHUB_JOB", "deploy")
+	t.Setenv("GITHUB_REPOSITORY", "company/project")
 
 	ic := GetInputConfig()
 
@@ -187,14 +187,16 @@ func TestMain(m *testing.M) {
 	// Restore environment
 	for _, envVar := range oldEnv {
 		pair := strings.SplitN(envVar, "=", 2)
-		os.Setenv(pair[0], pair[1])
+		if err := os.Setenv(pair[0], pair[1]); err != nil {
+			panic(err)
+		}
 	}
 
 	os.Exit(code)
 }
 
 func TestInputConfigValidate(t *testing.T) {
-	os.Setenv("INPUT_ENVIRONMENT", "production")
+	t.Setenv("INPUT_ENVIRONMENT", "production")
 	tests := []struct {
 		name        string
 		inputConfig InputConfig
